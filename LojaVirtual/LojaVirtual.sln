@@ -1,0 +1,40 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LojaVirtual.Model", "LojaVirtual.Model\LojaVirtual.Model.csproj", "{6C521D99-3C8D-4346-9BFE-40F4B65D2614}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LojaVirtual.Data", "LojaVirtual.Data\LojaVirtual.Data.csproj", "{CBE3979C-D24A-4A9E-978B-F051320DA029}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LojaVirtual.Controller", "LojaVirtual.Controller\LojaVirtual.Controller.csproj", "{7B44BDDE-D76E-4EEA-A2E3-A5FF39DA61D5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LojaVirtual.View", "LojaVirtual.View\LojaVirtual.View.csproj", "{225E5ED7-DDEA-4831-8A5F-968FEC012870}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6C521D99-3C8D-4346-9BFE-40F4B65D2614}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C521D99-3C8D-4346-9BFE-40F4B65D2614}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C521D99-3C8D-4346-9BFE-40F4B65D2614}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C521D99-3C8D-4346-9BFE-40F4B65D2614}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CBE3979C-D24A-4A9E-978B-F051320DA029}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CBE3979C-D24A-4A9E-978B-F051320DA029}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CBE3979C-D24A-4A9E-978B-F051320DA029}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CBE3979C-D24A-4A9E-978B-F051320DA029}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B44BDDE-D76E-4EEA-A2E3-A5FF39DA61D5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B44BDDE-D76E-4EEA-A2E3-A5FF39DA61D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B44BDDE-D76E-4EEA-A2E3-A5FF39DA61D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B44BDDE-D76E-4EEA-A2E3-A5FF39DA61D5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{225E5ED7-DDEA-4831-8A5F-968FEC012870}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{225E5ED7-DDEA-4831-8A5F-968FEC012870}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{225E5ED7-DDEA-4831-8A5F-968FEC012870}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{225E5ED7-DDEA-4831-8A5F-968FEC012870}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,13 @@
+# Build do .NET / Visual Studio
+bin/
+obj/
+.vs/
+*.user
+
+# Arquivos temporários do LibreOffice/Word
+.~lock.*
+~$*
+
+# Material que não vai para o repositório público
+Atividade Avaliativa - Stack- EW - EW34M-4e5M.pdf
+_versao_original_*/
