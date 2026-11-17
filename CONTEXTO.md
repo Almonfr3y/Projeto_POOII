@@ -5,7 +5,7 @@ base à Seção 10 do plano (uso de IA). Última atualização: **17/11/2026** (
 
 ## O projeto em uma página
 
-- **Disciplina:** POO II — Stack EW (UVV), grupo de 3, vale 2,5 pontos. **Entrega e apresentação: 18/11/2026.**
+- **Disciplina:** POO II — Stack EW (UVV), vale 2,5 pontos. O enunciado pede grupos de 3, mas **este trabalho é individual: o grupo é só o Miguel** (informado em 17/11). **Entrega e apresentação: 18/11/2026.**
 - **Entrega:** código C# (Visual Studio), documentação e **vídeo único de até 10 min** em que cada integrante
   apresenta uma parte, com o nome completo na tela. **Envio individual no Blog.**
 - **Tema:** Loja Virtual de peças de computador, do ponto de vista do **cliente fazendo uma compra**:
@@ -31,7 +31,7 @@ base à Seção 10 do plano (uso de IA). Última atualização: **17/11/2026** (
 | 04/11 | Primeiros diagramas e plano (originais guardados em `_versao_original_20261104/`, fora do Git). |
 | 11/11 | Diagramas e plano corrigidos; escopo simplificado para o fluxo de compra do cliente; heranças `Pessoa → PF/PJ` e `Pagamento → Pix/Boleto/Cartão` (TPH) trazidas de volta; solution criada; repositório publicado. |
 | 12/11 | Telas Favoritos, Carrinho, Checkout (assistente em 5 etapas) e Meus Pedidos; migration `CriacaoInicial`; teste contra MySQL 8. |
-| 17/11 | (1) Commit/push das telas e da migration. (2) Regra de IA liberada. (3) `PedidoService.FinalizarPedido` implementado; comparativo com e sem IA; ajustes de estoque; plano e READMEs atualizados; revisão dos diagramas. (4) Código simplificado e comentado. (5) Este arquivo. (6) **Segunda simplificação, para o nível de um aluno de 3º período** (detalhes abaixo). |
+| 17/11 | (1) Commit/push das telas e da migration. (2) Regra de IA liberada. (3) `PedidoService.FinalizarPedido` implementado; comparativo com e sem IA; ajustes de estoque; plano e READMEs atualizados; revisão dos diagramas. (4) Código simplificado e comentado. (5) Este arquivo. (6) **Segunda simplificação, para o nível de um aluno de 3º período** (detalhes abaixo). (7) Commit `9591fd4` enviado ao GitHub; avaliação do nível do trabalho para um aluno sozinho (seção abaixo). |
 
 ## Como o código está agora (segunda simplificação, 17/11 à tarde)
 
@@ -79,6 +79,38 @@ interfaces; `IUnidadeDeTrabalho`/`UnidadeDeTrabalho`; `FabricaDeControladores`; 
   `diagrama_arquitetura_camadas.html` (abrir no navegador para editar).
 - READMEs da raiz, de `LojaVirtual/` e de `Comparativo_IA/`.
 
+## Trabalho individual: o nível está adequado? (avaliação de 17/11)
+
+**Contexto:** o grupo é só o Miguel, aluno do 3º período de Engenharia de Software (UVV), e a nota é individual.
+O professor fará perguntas sobre o código.
+
+**Veredito:** depois da 2ª simplificação, o **código** está no nível de um aluno de POO II: classes, herança,
+`abstract`/`override`, interface, `List<>`, `foreach`, `try/catch`, LINQ básico e EF com `using`. O que ainda fica
+**acima** do esperado para um aluno sozinho:
+
+1. **Tamanho do projeto para uma pessoa:** 4 projetos, 6 telas, 9 tabelas, 2 heranças, checkout em 5 etapas, em cerca de
+   2 semanas. É plausível, mas é bastante. Se perguntarem, a resposta honesta é que a IA ajudou (e isso está documentado).
+2. **Fluent API do EF:** `HasDiscriminator` (TPH), `UsingEntity<Dictionary<string, object>>` (tb_favorito),
+   `HasData` (seed), `HasConversion<string>`. É o trecho mais difícil de explicar; é o primeiro a estudar.
+3. **Padrões com nome:** Strategy (`IDescontoStrategy`) e Template Method (`Pagamento.Processar` →
+   `GerarDadosDoPagamento`). São simples, mas é preciso saber explicar com as próprias palavras.
+4. **O plano (.docx) tem linguagem de profissional** (21 páginas, tabelas de SOLID/Clean Code, cronograma em fases)
+   e **ainda fala em 3 integrantes**: capa ("Equipe: 3 integrantes"), Sumário Executivo, 2.1, 7.2/Tabela 5, Tabela 9
+   (roteiro do vídeo dividido em 3 pessoas). **Precisa ser ajustado para trabalho individual.**
+5. **Comparativo com e sem IA:** a versão A foi escrita pela IA. Sozinho, não há "outro integrante" que tenha escrito
+   sem IA. O mais seguro é o Miguel reescrever a versão A do jeito dele, ou dizer no vídeo que é uma reconstrução.
+
+**O que estudar para as perguntas do professor (por prioridade):**
+- O caminho de uma compra: `FrmCheckout.ConfirmarCompra` → `PedidoController.Finalizar` → `Produto.BaixarEstoque`,
+  `OpcaoEntrega.CalcularFrete`, `Pedido.AplicarDesconto`, `Pagamento.Processar` → `SaveChanges`.
+  Por que nada é gravado se der erro no meio (o `SaveChanges` só acontece no fim).
+- Herança TPH: por que PF e PJ ficam na mesma tabela (`tb_pessoa`, coluna `TipoPessoa`), e o mesmo para pagamentos.
+- Os relacionamentos: 1×1 (Pedido–Pagamento), 1×N, N×N (PedidoItem com chave composta × tb_favorito sem classe),
+  composição (Cascade) × agregação (Restrict).
+- SQL puro no `MeusPedidosDAO`: JOIN, LEFT JOIN, GROUP BY, SUM, parâmetro `@clienteId` contra SQL injection.
+- OCP na prática: trocar `new DescontoQuantidade()` por `new SemDesconto()` no `FrmCheckout`.
+- Code First: o que é migration, `Add-Migration` e `Update-Database`.
+
 ## Revisão das modelagens (diagramas)
 
 Sem erros estruturais: classes, atributos, multiplicidades e tabelas batem com o código. Pontos a corrigir
@@ -95,15 +127,17 @@ Sem erros estruturais: classes, atributos, multiplicidades e tabelas batem com o
 7. **Excalidraw:** as telas de Cadastro e Perfil e o "Produto em Promoção" estão desenhados mas fora do escopo —
    marcar como "fora do escopo" ou explicar no vídeo.
 
-## Pendências do grupo (para 18/11)
+## Pendências (para 18/11)
 
 - [ ] Abrir cada tela no Visual Studio (Windows) e conferir o layout.
 - [ ] Criar o banco: `Update-Database -Project LojaVirtual.Data -StartupProject LojaVirtual.Data` no Package Manager Console.
-- [ ] Revisar o código e o comparativo (o professor fará perguntas sobre o código).
-- [ ] Nomes dos integrantes nas Tabelas 5 e 9 do plano.
+- [ ] Revisar o código e reescrever (ou assumir no vídeo) a versão A do comparativo.
+- [ ] Ajustar o plano para trabalho individual: capa, Sumário Executivo, 2.1, 7.2/Tabela 5 e Tabela 9 (vídeo todo apresentado pelo Miguel, com o nome completo na tela).
+- [ ] Confirmar com o professor que o trabalho individual é aceito (o enunciado fala em grupos de 3).
+- [ ] Estudar os pontos da seção "Trabalho individual" acima.
 - [ ] Copiar a Tabela 7 (registro de IA) para o Trello.
 - [ ] (Opcional) Redesenhar os diagramas com as correções acima.
-- [ ] Gravar o vídeo (roteiro na Seção 11.2 do plano) e enviar individualmente no Blog.
+- [ ] Gravar o vídeo (roteiro na Seção 11.2 do plano) e enviar no Blog.
 
 ## Notas técnicas para quem continuar
 
