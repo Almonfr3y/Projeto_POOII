@@ -41,23 +41,35 @@ Referências: View → Controller → Model; Controller → Data (somente na fá
 1. Abra `LojaVirtual.sln` e defina `LojaVirtual.View` como projeto de inicialização.
 2. A conexão vem da variável de ambiente `LOJA_VIRTUAL_DB`. Sem ela, é usado
    `server=localhost;port=3306;database=loja_pecas;user=root;password=;` (`LojaVirtual.Data/ConfiguracaoBanco.cs`).
-3. Crie o banco pelo Code First (Package Manager Console, projeto padrão `LojaVirtual.Data`):
+3. Crie o banco pelo Code First. A migration `CriacaoInicial` já está em `LojaVirtual.Data/Migrations`
+   (cria as 9 tabelas e a carga inicial). No Package Manager Console, com projeto padrão `LojaVirtual.Data`:
    ```
-   Add-Migration CriacaoInicial
    Update-Database
    ```
+   Se mudarem alguma entidade, gerem uma nova migration com `Add-Migration <Nome>` antes do `Update-Database`.
 4. Entre com **ana@teste.com** (pessoa física) ou **empresa@teste.com** (pessoa jurídica), senha **123456** (dados fictícios da carga inicial).
 
 ## O que está pronto × o que é do grupo
 
 Pronto (para revisar): entidades e relacionamentos, Fluent API, carga inicial (3 categorias, 12 peças,
 3 opções de entrega, 1 cliente PF e 1 cliente PJ com endereços), repositórios, login, carrinho, frete por peso, desconto por
-quantidade, herança de pagamento com processamento simulado, consulta **Meus Pedidos** em SQL puro, e as
-telas `FrmLogin` e `FrmInicial` como exemplo do fluxo View → Controller.
+quantidade, herança de pagamento com processamento simulado, consulta **Meus Pedidos** em SQL puro,
+migration inicial, e todas as telas:
+
+- `FrmLogin`, `FrmInicial` (catálogo, busca, categorias, favoritar, adicionar ao carrinho);
+- `FrmFavoritos` (pesquisa, desfavoritar, adicionar ao carrinho);
+- `FrmCarrinho` (alterar quantidade, remover, subtotal, "Finalizar Compra");
+- `FrmCheckout` — assistente Endereço → Entrega (frete simulado de cada opção) → Pagamento (Pix, Boleto
+  ou Cartão) → Revisão (com CPF/CNPJ) → Concluído;
+- `FrmMeusPedidos` (grade alimentada pela consulta em SQL puro).
+
+Testado em 12/11/2026 contra um MySQL 8 real: migration aplicada, login, favoritos, carrinho, frete, documento
+PF/PJ e a consulta `MeusPedidosDAO` (com um pedido inserido à mão). As telas compilam, mas só rodam no Windows:
+**abram cada uma no Visual Studio para revisar o layout**.
 
 Marcado com `TODO (grupo)` (busque por `TODO` no Visual Studio):
 
 - `PedidoService.FinalizarPedido` — passos descritos no comentário. É o trecho escolhido para o
   **comparativo com e sem IA** (Seção 10.4 do plano): a versão A deve ser escrita pelo grupo sem IA.
-- Telas `FrmFavoritos`, `FrmCarrinho`, `FrmCheckout` (assistente em etapas) e `FrmMeusPedidos`.
+  Enquanto não for implementado, o botão "Confirmar compra" do checkout mostra um aviso e o carrinho é mantido.
 - Confirmar os valores de `DescontoQuantidade`.

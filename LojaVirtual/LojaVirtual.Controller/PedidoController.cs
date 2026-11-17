@@ -23,9 +23,10 @@ public class PedidoController
         _frete = frete;
     }
 
-    public IReadOnlyList<Endereco> ListarEnderecos(int clienteId) =>
-        (_clientes.ObterComDetalhes(clienteId) ?? throw new InvalidOperationException("Cliente não encontrado."))
-            .Enderecos.ToList();
+    public IReadOnlyList<Endereco> ListarEnderecos(int clienteId) => ObterCliente(clienteId).Enderecos.ToList();
+
+    /// <summary>"CPF ..." ou "CNPJ ...", mostrado na Revisão sem a tela saber se é PF ou PJ (LSP).</summary>
+    public string DescreverDocumento(int clienteId) => ObterCliente(clienteId).DescreverDocumento();
 
     public IReadOnlyList<OpcaoEntrega> ListarOpcoesEntrega() => _opcoesEntrega.Listar();
 
@@ -38,4 +39,7 @@ public class PedidoController
         carrinho.Limpar();
         return pedido;
     }
+
+    private Pessoa ObterCliente(int clienteId) =>
+        _clientes.ObterComDetalhes(clienteId) ?? throw new InvalidOperationException("Cliente não encontrado.");
 }
