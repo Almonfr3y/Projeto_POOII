@@ -3,8 +3,8 @@ using LojaVirtual.Model.Entidades.Pagamentos;
 namespace LojaVirtual.Model.Checkout;
 
 /// <summary>
-/// Escolhas feitas nas telas Endereço → Entrega → Pagamento.
-/// Agrupar em um objeto evita métodos com parâmetros demais (Clean Code).
-/// O Pagamento chega preenchido com os dados da forma escolhida, ainda sem valor.
+/// As escolhas do cliente nas etapas Endereço → Entrega → Pagamento, juntas num objeto só
+/// (evita método com parâmetros demais — Clean Code). O pagamento chega sem valor; o
+/// PedidoService preenche o valor ao finalizar.
 /// </summary>
 public record DadosCheckout(int ClienteId, int EnderecoEntregaId, int OpcaoEntregaId, Pagamento Pagamento);

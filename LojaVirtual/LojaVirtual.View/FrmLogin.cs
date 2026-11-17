@@ -13,7 +13,7 @@ public partial class FrmLogin : Form
     {
         _contas = contas;
         _sessao = sessao;
-        InitializeComponent();
+        InitializeComponent(); // cria os controles desenhados no Designer
     }
 
     private void BtnEntrar_Click(object sender, EventArgs e)
@@ -21,11 +21,11 @@ public partial class FrmLogin : Form
         try
         {
             _sessao.Entrar(_contas.Entrar(txtEmail.Text, txtSenha.Text));
-            DialogResult = DialogResult.OK;
+            DialogResult = DialogResult.OK; // fecha o login e avisa o Program que deu certo
         }
         catch (LoginInvalidoException ex)
         {
-            MessageBox.Show(ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            Mensagem.Aviso(this, ex.Message);
         }
     }
 }

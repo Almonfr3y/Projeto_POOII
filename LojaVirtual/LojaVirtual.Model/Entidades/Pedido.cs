@@ -4,38 +4,36 @@ using LojaVirtual.Model.Enums;
 
 namespace LojaVirtual.Model.Entidades;
 
+/// <summary>Uma compra do cliente.</summary>
 public class Pedido
 {
-    public int Id { get; set; }
+    public int Id { get; set; }                                   // número do pedido (gerado pelo banco)
     public DateTime Data { get; set; }
     public StatusPedido Status { get; set; } = StatusPedido.Aberto;
     public decimal ValorFrete { get; set; }
     public decimal ValorDesconto { get; set; }
 
-    public int ClienteId { get; set; }
+    public int ClienteId { get; set; }                            // 1×N: quem comprou
     public Pessoa? Cliente { get; set; }
 
-    public int EnderecoEntregaId { get; set; }
+    public int EnderecoEntregaId { get; set; }                    // N×1: para onde vai
     public Endereco? EnderecoEntrega { get; set; }
 
-    public int OpcaoEntregaId { get; set; }
+    public int OpcaoEntregaId { get; set; }                       // N×1: como vai
     public OpcaoEntrega? OpcaoEntrega { get; set; }
 
-    /// <summary>Composição: os itens só existem dentro do pedido.</summary>
-    public List<PedidoItem> Itens { get; set; } = new();
+    public List<PedidoItem> Itens { get; set; } = new();          // COMPOSIÇÃO: itens só existem no pedido
 
-    /// <summary>1×1: cada pedido tem um pagamento (Pix, Boleto ou Cartão).</summary>
-    public Pagamento? Pagamento { get; set; }
+    public Pagamento? Pagamento { get; set; }                     // 1×1: Pix, Boleto ou Cartão
 
     public decimal CalcularSubtotal() => Itens.Sum(item => item.CalcularSubtotal());
 
     public decimal CalcularTotal() => CalcularSubtotal() + ValorFrete - ValorDesconto;
 
-    public void AplicarDesconto(IDescontoStrategy estrategia)
-    {
-        ValorDesconto = estrategia.CalcularDesconto(this);
-    }
+    /// <summary>Calcula o desconto com a regra recebida (Strategy): o pedido não sabe qual regra é.</summary>
+    public void AplicarDesconto(IDescontoStrategy estrategia) => ValorDesconto = estrategia.CalcularDesconto(this);
 
+    /// <summary>Marca o pedido como concluído, só se ele tiver itens e ainda estiver aberto.</summary>
     public void Finalizar()
     {
         if (Itens.Count == 0)

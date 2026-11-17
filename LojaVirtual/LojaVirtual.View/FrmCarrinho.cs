@@ -20,6 +20,7 @@ public partial class FrmCarrinho : Form
 
     private void FrmCarrinho_Load(object sender, EventArgs e) => AtualizarItens();
 
+    // Ao clicar numa linha, o campo de quantidade mostra a quantidade daquele item.
     private void DgvItens_SelectionChanged(object sender, EventArgs e)
     {
         if (ItemSelecionado() is LinhaCarrinho item)
@@ -33,12 +34,12 @@ public partial class FrmCarrinho : Form
 
         try
         {
-            _sessao.Carrinho.AlterarQuantidade(item.ProdutoId, (int)nudQuantidade.Value);
+            _sessao.Carrinho.AlterarQuantidade(item.ProdutoId, (int)nudQuantidade.Value); // 0 remove o item
             AtualizarItens();
         }
         catch (EstoqueInsuficienteException ex)
         {
-            MessageBox.Show(ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            Mensagem.Aviso(this, ex.Message);
         }
     }
 
@@ -55,10 +56,11 @@ public partial class FrmCarrinho : Form
     {
         if (_sessao.Carrinho.Carrinho.EstaVazio)
         {
-            MessageBox.Show("O carrinho está vazio.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            Mensagem.Info(this, "O carrinho está vazio.");
             return;
         }
 
+        // Abre o checkout. OK = compra concluída: fecha o carrinho. Senão, só atualiza a lista.
         using var checkout = new FrmCheckout(_fabrica.CriarPedidoController(), _sessao);
         if (checkout.ShowDialog(this) == DialogResult.OK)
             Close();
@@ -72,9 +74,10 @@ public partial class FrmCarrinho : Form
     {
         dgvItens.DataSource = _sessao.Carrinho.Carrinho.Itens.Select(LinhaCarrinho.De).ToList();
         lblSubtotal.Text = $"Subtotal: {_sessao.Carrinho.CalcularSubtotal():C}";
-        btnFinalizar.Enabled = !_sessao.Carrinho.Carrinho.EstaVazio;
+        btnFinalizar.Enabled = !_sessao.Carrinho.Carrinho.EstaVazio; // sem itens, não dá para finalizar
     }
 
+    /// <summary>O que a grade mostra: uma linha por item do carrinho.</summary>
     private sealed record LinhaCarrinho(
         [property: Browsable(false)] int ProdutoId,
         [property: DisplayName("Peça")] string Produto,

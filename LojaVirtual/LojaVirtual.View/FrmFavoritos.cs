@@ -30,7 +30,7 @@ public partial class FrmFavoritos : Form
             return;
 
         _favoritos.Desfavoritar(_sessao.Cliente.Id, favorito.ProdutoId);
-        AtualizarLista();
+        AtualizarLista(); // some da lista na hora
     }
 
     private void BtnAdicionar_Click(object sender, EventArgs e)
@@ -41,22 +41,20 @@ public partial class FrmFavoritos : Form
         try
         {
             _sessao.Carrinho.Adicionar(favorito.ProdutoId, QuantidadePadrao);
-            MessageBox.Show($"\"{favorito.Nome}\" adicionado ao carrinho.", Text);
+            Mensagem.Info(this, $"\"{favorito.Nome}\" adicionado ao carrinho.");
         }
         catch (EstoqueInsuficienteException ex)
         {
-            MessageBox.Show(ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            Mensagem.Aviso(this, ex.Message);
         }
     }
 
     private LinhaFavorito? FavoritoSelecionado() => dgvFavoritos.CurrentRow?.DataBoundItem as LinhaFavorito;
 
-    private void AtualizarLista()
-    {
+    private void AtualizarLista() =>
         dgvFavoritos.DataSource = _favoritos.Listar(_sessao.Cliente.Id, txtBusca.Text)
             .Select(LinhaFavorito.De)
             .ToList();
-    }
 
     /// <summary>O que a grade mostra: só as colunas que interessam ao cliente.</summary>
     private sealed record LinhaFavorito(

@@ -1,9 +1,9 @@
 namespace LojaVirtual.Model.Enums;
 
-/// <summary>Situação do pedido. Persistido como texto (ver PedidoConfiguracao).</summary>
+/// <summary>Situação do pedido. Gravada no banco como texto (ex.: "Finalizado").</summary>
 public enum StatusPedido
 {
-    Aberto,
-    Finalizado,
-    Cancelado
+    Aberto,      // pedido sendo montado no checkout
+    Finalizado,  // compra concluída e paga
+    Cancelado    // reservado para uma futura função de cancelamento
 }

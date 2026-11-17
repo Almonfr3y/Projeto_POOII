@@ -23,19 +23,21 @@ public class PedidoController
         _frete = frete;
     }
 
+    // Etapa Endereço: os endereços salvos do cliente.
     public IReadOnlyList<Endereco> ListarEnderecos(int clienteId) => ObterCliente(clienteId).Enderecos.ToList();
 
-    /// <summary>"CPF ..." ou "CNPJ ...", mostrado na Revisão sem a tela saber se é PF ou PJ (LSP).</summary>
+    // Revisão: "CPF ..." ou "CNPJ ...", sem a tela saber se é PF ou PJ (polimorfismo).
     public string DescreverDocumento(int clienteId) => ObterCliente(clienteId).DescreverDocumento();
 
+    // Etapa Entrega: as opções e o frete de cada uma para este carrinho.
     public IReadOnlyList<OpcaoEntrega> ListarOpcoesEntrega() => _opcoesEntrega.Listar();
 
-    /// <summary>Mostra o frete de cada opção na tela de Entrega.</summary>
     public decimal SimularFrete(CarrinhoDeCompras carrinho, OpcaoEntrega opcao) => _frete.CalcularFrete(carrinho.Itens, opcao);
 
-    /// <summary>Mostra o desconto na tela de Revisão, com a mesma regra usada ao finalizar (DRY).</summary>
+    // Revisão: mesma regra de desconto usada ao finalizar (DRY).
     public decimal SimularDesconto(CarrinhoDeCompras carrinho) => _pedidoService.SimularDesconto(carrinho.Itens);
 
+    /// <summary>Confirmar compra: grava o pedido e, só se deu certo, esvazia o carrinho.</summary>
     public Pedido Finalizar(DadosCheckout dados, CarrinhoDeCompras carrinho)
     {
         Pedido pedido = _pedidoService.FinalizarPedido(dados, carrinho.Itens);

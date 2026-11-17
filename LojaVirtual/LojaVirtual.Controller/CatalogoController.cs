@@ -17,6 +17,7 @@ public class CatalogoController
 
     public IReadOnlyList<Categoria> ListarCategorias() => _categorias.Listar();
 
+    // categoriaId null = todas; textoBusca vazio = sem filtro de nome.
     public IReadOnlyList<Produto> ListarProdutos(int? categoriaId, string? textoBusca) =>
         _produtos.Listar(categoriaId, textoBusca);
 }

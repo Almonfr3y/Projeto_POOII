@@ -3,8 +3,9 @@ using LojaVirtual.Model.Entidades;
 namespace LojaVirtual.Model.Descontos;
 
 /// <summary>
-/// OCP (SOLID): novos descontos são novas classes que implementam esta interface,
-/// sem alterar Pedido nem PedidoService. A estratégia usada é escolhida na FabricaDeControladores.
+/// Padrão Strategy + OCP (SOLID): cada regra de desconto é uma classe que implementa esta interface.
+/// Para criar um desconto novo, basta uma classe nova — Pedido e PedidoService não mudam.
+/// A regra em uso é escolhida na FabricaDeControladores.
 /// </summary>
 public interface IDescontoStrategy
 {

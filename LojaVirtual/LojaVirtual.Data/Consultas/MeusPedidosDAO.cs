@@ -9,6 +9,8 @@ namespace LojaVirtual.Data.Consultas;
 /// </summary>
 public class MeusPedidosDAO : IMeusPedidosConsulta
 {
+    // Junta pedido + itens + pagamento, agrupa por pedido e soma os itens para calcular o total.
+    // @clienteId é um parâmetro: o valor nunca é colado no texto do SQL (evita SQL injection).
     private const string SqlPedidosDoCliente = """
         SELECT p.Id                                AS Numero,
                p.Data                              AS Data,
@@ -30,22 +32,24 @@ public class MeusPedidosDAO : IMeusPedidosConsulta
 
     public IReadOnlyList<ResumoPedido> ListarPorCliente(int clienteId)
     {
+        // "using" fecha a conexão, o comando e o leitor automaticamente no fim do método.
         using var conexao = new MySqlConnection(_stringDeConexao);
         conexao.Open();
 
         using var comando = new MySqlCommand(SqlPedidosDoCliente, conexao);
-        comando.Parameters.AddWithValue("@clienteId", clienteId);
+        comando.Parameters.AddWithValue("@clienteId", clienteId); // preenche o parâmetro do SQL
 
-        using MySqlDataReader leitor = comando.ExecuteReader();
+        using MySqlDataReader leitor = comando.ExecuteReader();   // executa o SELECT
         var pedidos = new List<ResumoPedido>();
-        while (leitor.Read())
+        while (leitor.Read())                                     // uma volta por linha do resultado
         {
+            // Cada coluna do SELECT vira um campo do ResumoPedido.
             pedidos.Add(new ResumoPedido(
                 leitor.GetInt32("Numero"),
                 leitor.GetDateTime("Data"),
                 leitor.GetString("Status"),
                 leitor.GetString("FormaPagamento"),
-                Convert.ToInt32(leitor["QuantidadeItens"]),
+                Convert.ToInt32(leitor["QuantidadeItens"]), // SUM vem como número grande; converte para int
                 leitor.GetDecimal("Total")));
         }
 

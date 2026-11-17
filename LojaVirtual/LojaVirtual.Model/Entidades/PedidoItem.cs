@@ -1,8 +1,8 @@
 namespace LojaVirtual.Model.Entidades;
 
 /// <summary>
-/// Classe de associação do relacionamento N×N Pedido—Produto.
-/// Chave composta (PedidoId, ProdutoId).
+/// Uma linha do pedido (ou do carrinho). É a classe de associação do N×N Pedido—Produto:
+/// chave composta (PedidoId, ProdutoId) mais os dados da venda (quantidade e preço).
 /// </summary>
 public class PedidoItem
 {
@@ -14,7 +14,7 @@ public class PedidoItem
 
     public int Quantidade { get; set; }
 
-    /// <summary>Preço congelado no momento da compra.</summary>
+    // Preço copiado no momento da compra: se o produto mudar de preço depois, o pedido não muda.
     public decimal PrecoUnitario { get; set; }
 
     public decimal CalcularSubtotal() => Quantidade * PrecoUnitario;

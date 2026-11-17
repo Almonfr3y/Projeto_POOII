@@ -24,17 +24,19 @@ public partial class FrmMeusPedidos : Form
         {
             IReadOnlyList<ResumoPedido> pedidos = _meusPedidos.Listar(_sessao.Cliente.Id);
             dgvPedidos.DataSource = pedidos.Select(LinhaPedido.De).ToList();
+
+            // Rodapé: mensagem para quem não comprou ainda, ou quantidade e total gasto.
             lblResumo.Text = pedidos.Count == 0
                 ? "Você ainda não fez nenhum pedido."
                 : $"{pedidos.Count} pedido(s) — total gasto: {pedidos.Sum(p => p.Total):C}";
         }
-        catch (DbException ex)
+        catch (DbException ex) // erro do banco (ex.: MySQL desligado)
         {
-            MessageBox.Show($"Não foi possível consultar os pedidos: {ex.Message}", Text,
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            Mensagem.Erro(this, $"Não foi possível consultar os pedidos: {ex.Message}");
         }
     }
 
+    /// <summary>O que a grade mostra: uma linha por pedido, com data e valores formatados.</summary>
     private sealed record LinhaPedido(
         [property: DisplayName("Nº")] int Numero,
         [property: DisplayName("Data")] string Data,

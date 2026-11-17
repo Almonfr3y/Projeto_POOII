@@ -7,13 +7,13 @@ using LojaVirtual.Model.Excecoes;
 namespace LojaVirtual.View;
 
 /// <summary>
-/// "Tela Inicial" do desenho: busca, categorias, peças e os atalhos 🛒 ⭐ Meus Pedidos.
-/// Exemplo do fluxo View → Controller: o formulário só captura e exibe dados (SRP).
+/// "Tela Inicial": busca, categorias, peças e os botões Carrinho, Favoritos e Meus Pedidos.
+/// A tela só captura cliques e mostra dados; as regras ficam no Controller/Model (MVC).
 /// </summary>
 public partial class FrmInicial : Form
 {
-    private const int QuantidadePadrao = 1;
-    private const string TodasAsCategorias = "(todas)";
+    private const int QuantidadePadrao = 1;              // cada clique em "Adicionar" põe 1 unidade
+    private const string TodasAsCategorias = "(todas)";  // primeira opção do filtro
 
     private readonly FabricaDeControladores _fabrica;
     private readonly SessaoDoUsuario _sessao;
@@ -31,6 +31,7 @@ public partial class FrmInicial : Form
     {
         lblCliente.Text = $"Olá, {_sessao.Cliente.Nome}";
 
+        // Filtro: "(todas)" seguido das categorias do banco.
         var categorias = new List<object> { TodasAsCategorias };
         categorias.AddRange(_catalogo.ListarCategorias());
         cmbCategoria.DataSource = categorias;
@@ -43,17 +44,17 @@ public partial class FrmInicial : Form
 
     private void BtnAdicionar_Click(object sender, EventArgs e)
     {
-        if (ProdutoSelecionado() is not LinhaProduto produto)
+        if (ProdutoSelecionado() is not LinhaProduto produto) // nenhuma linha selecionada
             return;
 
         try
         {
             _sessao.Carrinho.Adicionar(produto.ProdutoId, QuantidadePadrao);
-            MessageBox.Show($"\"{produto.Nome}\" adicionado ao carrinho.", Text);
+            Mensagem.Info(this, $"\"{produto.Nome}\" adicionado ao carrinho.");
         }
         catch (EstoqueInsuficienteException ex)
         {
-            MessageBox.Show(ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            Mensagem.Aviso(this, ex.Message);
         }
     }
 
@@ -63,9 +64,10 @@ public partial class FrmInicial : Form
             return;
 
         _fabrica.CriarFavoritosController().Favoritar(_sessao.Cliente.Id, produto.ProdutoId);
-        MessageBox.Show($"\"{produto.Nome}\" adicionado aos favoritos.", Text);
+        Mensagem.Info(this, $"\"{produto.Nome}\" adicionado aos favoritos.");
     }
 
+    // Botões do topo: cada um abre a sua tela.
     private void BtnCarrinho_Click(object sender, EventArgs e) => Abrir(new FrmCarrinho(_sessao, _fabrica));
 
     private void BtnFavoritos_Click(object sender, EventArgs e) =>
@@ -74,14 +76,15 @@ public partial class FrmInicial : Form
     private void BtnMeusPedidos_Click(object sender, EventArgs e) =>
         Abrir(new FrmMeusPedidos(_fabrica.CriarMeusPedidosController(), _sessao));
 
+    // A linha selecionada na grade (ou null).
     private LinhaProduto? ProdutoSelecionado() => dgvProdutos.CurrentRow?.DataBoundItem as LinhaProduto;
 
     private void AtualizarLista()
     {
-        if (!IsHandleCreated)
+        if (!IsHandleCreated) // o ComboBox dispara o evento antes da tela terminar de carregar
             return;
 
-        int? categoriaId = (cmbCategoria.SelectedItem as Categoria)?.Id;
+        int? categoriaId = (cmbCategoria.SelectedItem as Categoria)?.Id; // "(todas)" não é Categoria → null
         dgvProdutos.DataSource = _catalogo.ListarProdutos(categoriaId, txtBusca.Text)
             .Select(LinhaProduto.De)
             .ToList();
@@ -89,17 +92,15 @@ public partial class FrmInicial : Form
 
     private void Abrir(Form formulario)
     {
-        using (formulario)
-        {
-            formulario.ShowDialog(this);
-        }
+        using (formulario)               // libera a tela da memória ao fechar
+            formulario.ShowDialog(this); // ShowDialog: a Tela Inicial espera a outra fechar
 
-        AtualizarLista(); // o estoque muda depois de uma compra
+        AtualizarLista(); // o estoque pode ter mudado depois de uma compra
     }
 
     /// <summary>O que a grade mostra: só as colunas que interessam ao cliente.</summary>
     private sealed record LinhaProduto(
-        [property: Browsable(false)] int ProdutoId,
+        [property: Browsable(false)] int ProdutoId,              // escondido, usado nos botões
         [property: DisplayName("Peça")] string Nome,
         [property: DisplayName("Categoria")] string Categoria,
         [property: DisplayName("Especificações")] string Especificacoes,
@@ -108,6 +109,6 @@ public partial class FrmInicial : Form
     {
         public static LinhaProduto De(Produto produto) =>
             new(produto.Id, produto.Nome, produto.Categoria?.Nome ?? "-", produto.Especificacoes,
-                produto.Preco.ToString("C"), produto.Estoque);
+                produto.Preco.ToString("C"), produto.Estoque); // "C" = formato de moeda (R$)
     }
 }

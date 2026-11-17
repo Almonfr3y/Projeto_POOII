@@ -4,7 +4,7 @@ using LojaVirtual.Model.Repositorios;
 
 namespace LojaVirtual.Controller;
 
-/// <summary>Tela de Carrinho. Uma instância por sessão, compartilhada entre as telas.</summary>
+/// <summary>Carrinho. Existe uma instância só, guardada na sessão e usada por todas as telas.</summary>
 public class CarrinhoController
 {
     private readonly IProdutoRepository _produtos;
@@ -15,10 +15,10 @@ public class CarrinhoController
 
     public void Adicionar(int produtoId, int quantidade)
     {
-        // Sem rastreamento: o carrinho vive a sessão inteira e precisa ver o estoque atual.
+        // Lê sem rastreamento: o carrinho vive a sessão inteira e precisa ver o estoque atual.
         Produto produto = _produtos.ObterParaConsulta(produtoId)
             ?? throw new InvalidOperationException("Produto não encontrado.");
-        Carrinho.Adicionar(produto, quantidade);
+        Carrinho.Adicionar(produto, quantidade); // pode lançar EstoqueInsuficienteException
     }
 
     public void AlterarQuantidade(int produtoId, int quantidade) => Carrinho.AlterarQuantidade(produtoId, quantidade);

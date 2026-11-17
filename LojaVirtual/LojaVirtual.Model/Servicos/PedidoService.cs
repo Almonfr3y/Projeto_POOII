@@ -7,9 +7,13 @@ using LojaVirtual.Model.Repositorios;
 
 namespace LojaVirtual.Model.Servicos;
 
-/// <summary>SRP: concentra a regra de finalização. DIP: depende só de interfaces.</summary>
+/// <summary>
+/// Regra de finalização da compra (SRP: só isso). Recebe tudo por interfaces no construtor (DIP),
+/// então não sabe se os dados vêm do MySQL, de outro banco ou de um teste.
+/// </summary>
 public class PedidoService : IPedidoService
 {
+    // Dependências recebidas no construtor (montadas na FabricaDeControladores).
     private readonly IProdutoRepository _produtos;
     private readonly IPedidoRepository _pedidos;
     private readonly IOpcaoEntregaRepository _opcoesEntrega;
@@ -36,18 +40,21 @@ public class PedidoService : IPedidoService
     /// <exception cref="InvalidOperationException">Carrinho vazio, produto ou opção de entrega inexistente.</exception>
     public Pedido FinalizarPedido(DadosCheckout dados, IReadOnlyList<PedidoItem> itensDoCarrinho)
     {
+        // 1ª parte: só monta e confere. Se algo falhar aqui, nenhum dado foi alterado.
         Pedido pedido = MontarPedido(dados, itensDoCarrinho);
         GarantirEstoqueDeTodosOsItens(pedido);
         CalcularValores(pedido, dados.OpcaoEntregaId);
         RegistrarPagamento(pedido, dados.Pagamento);
 
+        // 2ª parte: com tudo válido, altera o estoque e grava tudo numa única transação.
         BaixarEstoque(pedido);
-        pedido.Finalizar();
+        pedido.Finalizar();                      // Status = Finalizado
         _pedidos.Adicionar(pedido);
-        _unidadeDeTrabalho.SalvarAlteracoes();
+        _unidadeDeTrabalho.SalvarAlteracoes();   // aqui o banco gera o número (Id) do pedido
         return pedido;
     }
 
+    // Cria um pedido temporário (não gravado) só para a estratégia calcular o desconto.
     public decimal SimularDesconto(IReadOnlyList<PedidoItem> itensDoCarrinho) =>
         _desconto.CalcularDesconto(new Pedido { Itens = itensDoCarrinho.ToList() });
 
@@ -62,7 +69,7 @@ public class PedidoService : IPedidoService
             EnderecoEntregaId = dados.EnderecoEntregaId,
             OpcaoEntregaId = dados.OpcaoEntregaId,
             Data = DateTime.Now,
-            Itens = itensDoCarrinho.Select(CriarItemComPrecoAtual).ToList(),
+            Itens = itensDoCarrinho.Select(CriarItemComPrecoAtual).ToList(), // um item novo por item do carrinho
         };
     }
 
@@ -97,21 +104,21 @@ public class PedidoService : IPedidoService
         OpcaoEntrega opcao = _opcoesEntrega.ObterPorId(opcaoEntregaId)
             ?? throw new InvalidOperationException("Opção de entrega não encontrada.");
 
-        pedido.ValorFrete = _frete.CalcularFrete(pedido.Itens, opcao);
-        pedido.AplicarDesconto(_desconto);
+        pedido.ValorFrete = _frete.CalcularFrete(pedido.Itens, opcao);  // mesma regra da etapa Entrega
+        pedido.AplicarDesconto(_desconto);                              // regra escolhida na fábrica (Strategy)
     }
 
     /// <summary>LSP: funciona para Pix, Boleto ou Cartão sem saber qual é.</summary>
     private static void RegistrarPagamento(Pedido pedido, Pagamento pagamento)
     {
-        pagamento.Valor = pedido.CalcularTotal();
-        pagamento.Processar();
-        pedido.Pagamento = pagamento;
+        pagamento.Valor = pedido.CalcularTotal();   // subtotal + frete - desconto
+        pagamento.Processar();                      // gera código Pix, boleto ou valida o cartão
+        pedido.Pagamento = pagamento;               // liga o pagamento ao pedido (1×1)
     }
 
     private static void BaixarEstoque(Pedido pedido)
     {
         foreach (PedidoItem item in pedido.Itens)
-            item.Produto!.BaixarEstoque(item.Quantidade);
+            item.Produto!.BaixarEstoque(item.Quantidade); // "!" = o produto sempre existe (preenchido em MontarPedido)
     }
 }

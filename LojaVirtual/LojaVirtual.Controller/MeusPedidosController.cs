@@ -2,7 +2,7 @@ using LojaVirtual.Model.Consultas;
 
 namespace LojaVirtual.Controller;
 
-/// <summary>Tela "Meus Pedidos" (consulta em SQL puro).</summary>
+/// <summary>Tela "Meus Pedidos". A consulta por trás é SQL puro (MeusPedidosDAO).</summary>
 public class MeusPedidosController
 {
     private readonly IMeusPedidosConsulta _consulta;

@@ -9,10 +9,12 @@ namespace LojaVirtual.Data;
 /// </summary>
 internal static class CargaInicial
 {
+    // Ids das categorias, para os produtos abaixo ficarem legíveis.
     private const int Hardware = 1;
     private const int Perifericos = 2;
     private const int Pcs = 3;
 
+    /// <summary>HasData: o EF coloca estes INSERTs dentro da migration.</summary>
     public static void Aplicar(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Categoria>().HasData(
@@ -20,6 +22,7 @@ internal static class CargaInicial
             new Categoria { Id = Perifericos, Nome = "Periféricos" },
             new Categoria { Id = Pcs, Nome = "PCs" });
 
+        // Peca(id, categoria, nome, especificações, preço, peso em kg, estoque)
         modelBuilder.Entity<Produto>().HasData(
             Peca(1, Hardware, "Processador Ryzen 5 5600", "6 núcleos, 12 threads, AM4", 899.90m, 0.30m, 15),
             Peca(2, Hardware, "Placa de vídeo RTX 4060 8 GB", "8 GB GDDR6, PCIe 4.0", 2199.90m, 1.20m, 8),
@@ -34,6 +37,7 @@ internal static class CargaInicial
             Peca(11, Pcs, "PC Gamer Ryzen 5 / RTX 4060", "16 GB RAM, SSD 1 TB, fonte 650 W", 5499.90m, 9.50m, 4),
             Peca(12, Pcs, "PC Escritório Core i3", "8 GB RAM, SSD 256 GB", 2299.90m, 6.00m, 7));
 
+        // Frete = ValorBase + peso total × ValorPorKg (ver OpcaoEntrega.CalcularFrete).
         modelBuilder.Entity<OpcaoEntrega>().HasData(
             new OpcaoEntrega { Id = 1, Nome = "Econômica", PrazoDias = 10, ValorBase = 12m, ValorPorKg = 3m },
             new OpcaoEntrega { Id = 2, Nome = "Padrão", PrazoDias = 5, ValorBase = 18m, ValorPorKg = 4.5m },
@@ -45,6 +49,7 @@ internal static class CargaInicial
         modelBuilder.Entity<PessoaJuridica>().HasData(
             new PessoaJuridica { Id = 2, Nome = "Compras Tech Teste", RazaoSocial = "Tech Teste Ltda", Cnpj = "11.222.333/0001-81", Email = "empresa@teste.com", Senha = "123456" });
 
+        // Endereços salvos: 3 da Ana (Id 1) e 1 da empresa (Id 2).
         modelBuilder.Entity<Endereco>().HasData(
             new Endereco { Id = 1, ClienteId = 1, Apelido = "Casa", Logradouro = "Rua das Flores", Numero = "100", Bairro = "Centro", Cidade = "Vitória", Uf = "ES", Cep = "29010-000" },
             new Endereco { Id = 2, ClienteId = 1, Apelido = "Trabalho", Logradouro = "Av. Fernando Ferrari", Numero = "1000", Bairro = "Goiabeiras", Cidade = "Vitória", Uf = "ES", Cep = "29075-910" },
@@ -52,6 +57,7 @@ internal static class CargaInicial
             new Endereco { Id = 4, ClienteId = 2, Apelido = "Casa", Logradouro = "Rua do Comércio", Numero = "45", Bairro = "Jardim Camburi", Cidade = "Vitória", Uf = "ES", Cep = "29090-000" });
     }
 
+    // Atalho para não repetir o nome de cada propriedade nas 12 peças.
     private static Produto Peca(int id, int categoriaId, string nome, string especificacoes, decimal preco, decimal pesoKg, int estoque) =>
         new() { Id = id, CategoriaId = categoriaId, Nome = nome, Especificacoes = especificacoes, Preco = preco, PesoKg = pesoKg, Estoque = estoque };
 }

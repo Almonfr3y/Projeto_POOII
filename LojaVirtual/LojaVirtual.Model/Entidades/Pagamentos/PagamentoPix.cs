@@ -6,8 +6,6 @@ public class PagamentoPix : Pagamento
 
     public override string Descricao => "Pix";
 
-    protected override void GerarDadosDoPagamento()
-    {
-        CodigoPix = Guid.NewGuid().ToString("N").ToUpperInvariant();
-    }
+    // Simula o código "copia e cola" com um identificador aleatório de 32 caracteres.
+    protected override void GerarDadosDoPagamento() => CodigoPix = Guid.NewGuid().ToString("N").ToUpperInvariant();
 }
