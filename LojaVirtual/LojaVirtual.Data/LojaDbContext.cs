@@ -1,25 +1,28 @@
-using LojaVirtual.Model.Entidades;
-using LojaVirtual.Model.Entidades.Pagamentos;
-using Microsoft.EntityFrameworkCore;
+using LojaVirtual.Model.Entidades;               // classes do Model (Pessoa, Produto...)
+using LojaVirtual.Model.Entidades.Pagamentos;    // Pagamento e suas filhas
+using Microsoft.EntityFrameworkCore;             // Entity Framework Core (o ORM)
 
 namespace LojaVirtual.Data;
 
 // Code First: o banco loja_pecas é criado a partir das classes do Model e da configuração abaixo.
 // Se mudar alguma classe, gere uma nova migration (Add-Migration) e rode Update-Database.
+// ": DbContext" = herda do EF; é a classe que representa o banco dentro do C#.
 public class LojaDbContext : DbContext
 {
     // Troque aqui se o MySQL de vocês tiver outra senha ou outra porta.
     public const string StringDeConexao = "server=localhost;port=3306;database=loja_pecas;user=root;password=;";
 
-    public DbSet<Pessoa> Pessoas { get; set; }
-    public DbSet<Endereco> Enderecos { get; set; }
-    public DbSet<Categoria> Categorias { get; set; }
-    public DbSet<Produto> Produtos { get; set; }
-    public DbSet<OpcaoEntrega> OpcoesEntrega { get; set; }
-    public DbSet<Pedido> Pedidos { get; set; }
-    public DbSet<PedidoItem> PedidoItens { get; set; }
-    public DbSet<Pagamento> Pagamentos { get; set; }
+    // Cada DbSet é uma tabela que o código consulta com LINQ (ex.: db.Produtos.Where(...)).
+    public DbSet<Pessoa> Pessoas { get; set; }           // tb_pessoa (PF e PJ juntas)
+    public DbSet<Endereco> Enderecos { get; set; }       // tb_endereco
+    public DbSet<Categoria> Categorias { get; set; }     // tb_categoria
+    public DbSet<Produto> Produtos { get; set; }         // tb_produto
+    public DbSet<OpcaoEntrega> OpcoesEntrega { get; set; } // tb_opcao_entrega
+    public DbSet<Pedido> Pedidos { get; set; }           // tb_pedido
+    public DbSet<PedidoItem> PedidoItens { get; set; }   // tb_pedido_item
+    public DbSet<Pagamento> Pagamentos { get; set; }     // tb_pagamento (Pix, Boleto e Cartão juntos)
 
+    // Diz ao EF qual banco usar: MySQL (provedor Pomelo), na versão 8.0.
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder.UseMySql(StringDeConexao, new MySqlServerVersion(new Version(8, 0, 36)));
@@ -28,30 +31,34 @@ public class LojaDbContext : DbContext
     // Fluent API: nomes das tabelas, tamanhos dos campos, relacionamentos e heranças.
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        ConfigurarClientes(modelBuilder);
-        ConfigurarCatalogo(modelBuilder);
-        ConfigurarPedidos(modelBuilder);
-        ConfigurarPagamentos(modelBuilder);
+        ConfigurarClientes(modelBuilder);     // tb_pessoa, tb_endereco e tb_favorito
+        ConfigurarCatalogo(modelBuilder);     // tb_categoria, tb_produto e tb_opcao_entrega
+        ConfigurarPedidos(modelBuilder);      // tb_pedido e tb_pedido_item
+        ConfigurarPagamentos(modelBuilder);   // tb_pagamento
         CargaInicial.Aplicar(modelBuilder);   // dados iniciais (produtos, clientes...)
     }
 
+    // Clientes: herança PF/PJ, endereços (composição) e favoritos (NxN).
     private static void ConfigurarClientes(ModelBuilder modelBuilder)
     {
+        // Entity<T>(...) = configura a tabela da classe T. "pessoa =>" é uma lambda: um apelido para a configuração.
         modelBuilder.Entity<Pessoa>(pessoa =>
         {
-            pessoa.ToTable("tb_pessoa");
+            pessoa.ToTable("tb_pessoa");   // nome da tabela no MySQL
 
             // Herança (TPH): PF e PJ ficam na mesma tabela; a coluna TipoPessoa diz qual é qual.
             pessoa.HasDiscriminator<string>("TipoPessoa")
                 .HasValue<PessoaFisica>("PF")
                 .HasValue<PessoaJuridica>("PJ");
 
+            // IsRequired = NOT NULL; HasMaxLength = tamanho máximo do texto (varchar(150)).
             pessoa.Property(p => p.Nome).IsRequired().HasMaxLength(150);
             pessoa.Property(p => p.Email).IsRequired().HasMaxLength(150);
             pessoa.Property(p => p.Senha).IsRequired().HasMaxLength(50);
             pessoa.HasIndex(p => p.Email).IsUnique(); // não pode haver dois clientes com o mesmo e-mail
 
             // Composição 1xN: apagar o cliente apaga os endereços dele (Cascade).
+            // HasMany/WithOne = 1xN; HasForeignKey = coluna que liga as tabelas; OnDelete = o que fazer ao apagar.
             pessoa.HasMany(p => p.Enderecos).WithOne(e => e.Cliente)
                 .HasForeignKey(e => e.ClienteId).OnDelete(DeleteBehavior.Cascade);
 
@@ -89,6 +96,7 @@ public class LojaDbContext : DbContext
         });
     }
 
+    // Catálogo: categorias, produtos (agregação) e opções de entrega.
     private static void ConfigurarCatalogo(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Categoria>(categoria =>
@@ -102,7 +110,7 @@ public class LojaDbContext : DbContext
             produto.ToTable("tb_produto");
             produto.Property(p => p.Nome).IsRequired().HasMaxLength(150);
             produto.Property(p => p.Especificacoes).HasMaxLength(500);
-            produto.Property(p => p.Preco).HasPrecision(10, 2);  // até 99.999.999,99
+            produto.Property(p => p.Preco).HasPrecision(10, 2);  // decimal(10,2): até 99.999.999,99
             produto.Property(p => p.PesoKg).HasPrecision(8, 3);  // gramas de precisão
 
             // Agregação 1xN: o produto existe sem a categoria, então apagar a categoria é bloqueado (Restrict).
@@ -119,6 +127,7 @@ public class LojaDbContext : DbContext
         });
     }
 
+    // Pedidos: ligações com cliente, endereço, entrega, itens (composição) e pagamento (1x1).
     private static void ConfigurarPedidos(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Pedido>(pedido =>
@@ -153,13 +162,14 @@ public class LojaDbContext : DbContext
         modelBuilder.Entity<PedidoItem>(item =>
         {
             item.ToTable("tb_pedido_item");
-            item.HasKey(i => new { i.PedidoId, i.ProdutoId }); // o mesmo produto não se repete no pedido
+            item.HasKey(i => new { i.PedidoId, i.ProdutoId }); // chave composta: o mesmo produto não se repete no pedido
             item.Property(i => i.PrecoUnitario).HasPrecision(10, 2);
             item.HasOne(i => i.Produto).WithMany()
                 .HasForeignKey(i => i.ProdutoId).OnDelete(DeleteBehavior.Restrict);
         });
     }
 
+    // Pagamentos: herança Pix/Boleto/Cartão numa tabela só.
     private static void ConfigurarPagamentos(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Pagamento>(pagamento =>

@@ -1,10 +1,11 @@
-using LojaVirtual.Model.Entidades;
-using Microsoft.EntityFrameworkCore;
+using LojaVirtual.Model.Entidades;      // classes que recebem os dados
+using Microsoft.EntityFrameworkCore;    // para usar ModelBuilder e HasData
 
 namespace LojaVirtual.Data;
 
 // Dados iniciais do banco (seed). Como não temos tela de cadastro,
 // produtos, clientes e endereços já vêm prontos pela migration.
+// static: a classe não precisa de objeto; o método é chamado direto (CargaInicial.Aplicar).
 public static class CargaInicial
 {
     // Ids das categorias, para os produtos abaixo ficarem legíveis.
@@ -15,6 +16,7 @@ public static class CargaInicial
     // HasData: o EF coloca estes INSERTs dentro da migration.
     public static void Aplicar(ModelBuilder modelBuilder)
     {
+        // As 3 categorias do desenho de telas.
         modelBuilder.Entity<Categoria>().HasData(
             new Categoria { Id = Hardware, Nome = "Hardware" },
             new Categoria { Id = Perifericos, Nome = "Periféricos" },
@@ -35,7 +37,7 @@ public static class CargaInicial
             Peca(11, Pcs, "PC Gamer Ryzen 5 / RTX 4060", "16 GB RAM, SSD 1 TB, fonte 650 W", 5499.90m, 9.50m, 4),
             Peca(12, Pcs, "PC Escritório Core i3", "8 GB RAM, SSD 256 GB", 2299.90m, 6.00m, 7));
 
-        // Frete = ValorBase + peso total × ValorPorKg (ver OpcaoEntrega.CalcularFrete).
+        // As 3 opções de entrega. Frete = ValorBase + peso total × ValorPorKg (ver OpcaoEntrega.CalcularFrete).
         modelBuilder.Entity<OpcaoEntrega>().HasData(
             new OpcaoEntrega { Id = 1, Nome = "Econômica", PrazoDias = 10, ValorBase = 12m, ValorPorKg = 3m },
             new OpcaoEntrega { Id = 2, Nome = "Padrão", PrazoDias = 5, ValorBase = 18m, ValorPorKg = 4.5m },
@@ -58,6 +60,7 @@ public static class CargaInicial
     // Atalho para não repetir o nome de cada propriedade nas 12 peças.
     private static Produto Peca(int id, int categoriaId, string nome, string especificacoes, decimal preco, decimal pesoKg, int estoque)
     {
+        // Cria o objeto preenchendo as propriedades entre chaves (inicializador de objeto).
         return new Produto { Id = id, CategoriaId = categoriaId, Nome = nome, Especificacoes = especificacoes, Preco = preco, PesoKg = pesoKg, Estoque = estoque };
     }
 }

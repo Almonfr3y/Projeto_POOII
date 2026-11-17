@@ -31,7 +31,7 @@ base à Seção 10 do plano (uso de IA). Última atualização: **17/11/2026** (
 | 04/11 | Primeiros diagramas e plano (originais guardados em `_versao_original_20261104/`, fora do Git). |
 | 11/11 | Diagramas e plano corrigidos; escopo simplificado para o fluxo de compra do cliente; heranças `Pessoa → PF/PJ` e `Pagamento → Pix/Boleto/Cartão` (TPH) trazidas de volta; solution criada; repositório publicado. |
 | 12/11 | Telas Favoritos, Carrinho, Checkout (assistente em 5 etapas) e Meus Pedidos; migration `CriacaoInicial`; teste contra MySQL 8. |
-| 17/11 | (1) Commit/push das telas e da migration. (2) Regra de IA liberada. (3) `PedidoService.FinalizarPedido` implementado; comparativo com e sem IA; ajustes de estoque; plano e READMEs atualizados; revisão dos diagramas. (4) Código simplificado e comentado. (5) Este arquivo. (6) **Segunda simplificação, para o nível de um aluno de 3º período** (detalhes abaixo). (7) Commit `9591fd4` enviado ao GitHub; avaliação do nível do trabalho para um aluno sozinho (seção abaixo). (8) Plano ajustado para **trabalho individual**; criado o **material de estudo e roteiro do vídeo** em `Estudo/` (fora do Git). |
+| 17/11 | (1) Commit/push das telas e da migration. (2) Regra de IA liberada. (3) `PedidoService.FinalizarPedido` implementado; comparativo com e sem IA; ajustes de estoque; plano e READMEs atualizados; revisão dos diagramas. (4) Código simplificado e comentado. (5) Este arquivo. (6) **Segunda simplificação, para o nível de um aluno de 3º período** (detalhes abaixo). (7) Commit `9591fd4` enviado ao GitHub; avaliação do nível do trabalho para um aluno sozinho (seção abaixo). (8) Plano ajustado para **trabalho individual**; criado o **material de estudo e roteiro do vídeo** em `Estudo/` (fora do Git). (9) **Comentários linha a linha** em todo o código; **102 perguntas e respostas** do professor em `Estudo/`. |
 
 ## Como o código está agora (segunda simplificação, 17/11 à tarde)
 
@@ -139,6 +139,19 @@ e a sequência exata da demonstração · 13. Cola de 1 página.
 com quantidade 5 → "Estoque insuficiente..."; 5 × Mouse gamer + entrega Padrão + Cartão 3x →
 subtotal R$ 749,50, frete R$ 20,70, desconto R$ 37,48, **total R$ 732,72**; estoque do mouse 40 → 35.
 
+## Comentários linha a linha e perguntas do professor (17/11, noite)
+
+- **Código comentado:** todos os arquivos `.cs` escritos à mão (Model, Controller, Data e as telas) têm agora um
+  comentário em quase toda linha ou método, em linguagem simples (o que a linha faz e por quê), incluindo
+  explicações de C# (`abstract`, `override`, `protected`, `?`, `using`, `Include`, `?:`, `as`...). São 613 linhas com
+  comentário. Ficaram de fora os `*.Designer.cs` (o Visual Studio regera) e as Migrations (geradas pelo EF).
+- **Garantia de que o código não mudou:** um script remove os comentários das versões antes e depois e compara;
+  o resultado foi idêntico. A compilação continua com 0 avisos e 0 erros.
+- **`Estudo/Perguntas_e_Respostas.md` / `.pdf`** (14 páginas, fora do Git): 102 perguntas em 17 blocos — projeto,
+  OO, herança/polimorfismo, relacionamentos, coleções/LINQ, MVC, EF/Code First, SQL puro, regras de negócio, exceções,
+  SOLID, Clean Code, padrões, Windows Forms, "e se...?", IA/gestão e pegadinhas (senha em texto puro, «include»
+  × «extend», DIP parcial, carrinho só na memória, `Cancelado` sem uso). Cada resposta diz em que arquivo está.
+
 ## Revisão das modelagens (diagramas)
 
 Sem erros estruturais: classes, atributos, multiplicidades e tabelas batem com o código. Pontos a corrigir
@@ -163,7 +176,7 @@ Sem erros estruturais: classes, atributos, multiplicidades e tabelas batem com o
 - [x] Ajustar o plano para trabalho individual.
 - [ ] Preencher o nome completo na capa do plano (Word) e exportar o PDF de novo (atualizar o Sumário antes).
 - [ ] Confirmar com o professor que o trabalho individual é aceito (o enunciado fala em grupos de 3).
-- [ ] Estudar com `Estudo/Material_de_Estudo_e_Roteiro.pdf` e ensaiar o vídeo uma vez cronometrando.
+- [ ] Estudar com `Estudo/Material_de_Estudo_e_Roteiro.pdf` e `Estudo/Perguntas_e_Respostas.pdf` e ensaiar o vídeo uma vez cronometrando.
 - [ ] Copiar a Tabela 7 (registro de IA) para o Trello.
 - [ ] (Opcional) Redesenhar os diagramas com as correções acima.
 - [ ] Gravar o vídeo (roteiro na Seção 11.2 do plano) e enviar no Blog.
