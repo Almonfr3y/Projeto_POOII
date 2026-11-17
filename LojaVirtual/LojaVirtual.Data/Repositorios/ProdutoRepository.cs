@@ -12,7 +12,7 @@ public class ProdutoRepository : IProdutoRepository
 
     public IReadOnlyList<Produto> Listar(int? categoriaId = null, string? textoBusca = null)
     {
-        IQueryable<Produto> consulta = _contexto.Produtos.Include(p => p.Categoria);
+        IQueryable<Produto> consulta = _contexto.Produtos.AsNoTracking().Include(p => p.Categoria);
 
         if (categoriaId.HasValue)
             consulta = consulta.Where(p => p.CategoriaId == categoriaId.Value);
@@ -24,4 +24,7 @@ public class ProdutoRepository : IProdutoRepository
     }
 
     public Produto? ObterPorId(int id) => _contexto.Produtos.Include(p => p.Categoria).FirstOrDefault(p => p.Id == id);
+
+    public Produto? ObterParaConsulta(int id) =>
+        _contexto.Produtos.AsNoTracking().Include(p => p.Categoria).FirstOrDefault(p => p.Id == id);
 }

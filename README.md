@@ -24,6 +24,7 @@ Produtos, categorias, clientes e endereços já vêm cadastrados no banco (carga
 | `diagrama_arquitetura_camadas.png` | Arquitetura em camadas (MVC) |
 | `Projeto_POOII-2026-11-11-0730.excalidraw` | Desenho do fluxo de telas (abrir em [excalidraw.com](https://excalidraw.com)) |
 | `Modelagem_POO2_20261104.excalidraw` | Primeiro rascunho das telas |
+| [`Comparativo_IA/`](Comparativo_IA/) | Comparativo com e sem IA do `PedidoService.FinalizarPedido` (versões A e B + discussão crítica) |
 
 ## Requisitos do enunciado
 
@@ -35,5 +36,7 @@ Produtos, categorias, clientes e endereços já vêm cadastrados no banco (carga
 
 ## Uso de IA
 
-Trabalho dentro do nível **IA-2** da AI Assessment Scale: a IA auxiliou na geração inicial de código e da
-documentação, com revisão humana completa. O registro de ferramentas e prompts está na Seção 10 do plano.
+O professor liberou o uso de IA sem limite de nível (a regra inicial era o nível IA-2 da AI Assessment Scale).
+A IA (Claude Code) foi usada no planejamento, nos diagramas, na geração do código e da documentação, sempre
+com revisão humana. O registro de ferramentas e prompts está na Seção 10 do plano, e o comparativo com e sem IA
+em [`Comparativo_IA/`](Comparativo_IA/).

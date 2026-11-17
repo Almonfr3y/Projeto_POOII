@@ -1,8 +1,7 @@
 # LojaVirtual — estrutura inicial da solução
 
-> **Uso de IA (nível IA-2):** esta estrutura inicial foi gerada com auxílio de IA (Claude Code)
-> e precisa passar por revisão humana completa antes da entrega. Registre isso na Tabela 7 do plano
-> e no Trello.
+> **Uso de IA:** o código foi gerado com auxílio de IA (Claude Code) e revisado pelo grupo.
+> O professor liberou o uso de IA sem limite de nível; o registro está na Seção 10 do plano.
 
 ## Escopo
 
@@ -49,27 +48,28 @@ Referências: View → Controller → Model; Controller → Data (somente na fá
    Se mudarem alguma entidade, gerem uma nova migration com `Add-Migration <Nome>` antes do `Update-Database`.
 4. Entre com **ana@teste.com** (pessoa física) ou **empresa@teste.com** (pessoa jurídica), senha **123456** (dados fictícios da carga inicial).
 
-## O que está pronto × o que é do grupo
+## Situação
 
-Pronto (para revisar): entidades e relacionamentos, Fluent API, carga inicial (3 categorias, 12 peças,
-3 opções de entrega, 1 cliente PF e 1 cliente PJ com endereços), repositórios, login, carrinho, frete por peso, desconto por
-quantidade, herança de pagamento com processamento simulado, consulta **Meus Pedidos** em SQL puro,
-migration inicial, e todas as telas:
+Tudo implementado: entidades e relacionamentos, Fluent API, carga inicial (3 categorias, 12 peças,
+3 opções de entrega, 1 cliente PF e 1 cliente PJ com endereços), repositórios, login, carrinho, frete por peso,
+desconto por quantidade (5% a partir de 5 peças), herança de pagamento com processamento simulado,
+finalização do pedido (`PedidoService.FinalizarPedido`), consulta **Meus Pedidos** em SQL puro e todas as telas:
 
 - `FrmLogin`, `FrmInicial` (catálogo, busca, categorias, favoritar, adicionar ao carrinho);
 - `FrmFavoritos` (pesquisa, desfavoritar, adicionar ao carrinho);
 - `FrmCarrinho` (alterar quantidade, remover, subtotal, "Finalizar Compra");
 - `FrmCheckout` — assistente Endereço → Entrega (frete simulado de cada opção) → Pagamento (Pix, Boleto
-  ou Cartão) → Revisão (com CPF/CNPJ) → Concluído;
+  ou Cartão) → Revisão (com CPF/CNPJ, frete, desconto e total) → Concluído (número do pedido);
 - `FrmMeusPedidos` (grade alimentada pela consulta em SQL puro).
 
-Testado em 12/11/2026 contra um MySQL 8 real: migration aplicada, login, favoritos, carrinho, frete, documento
-PF/PJ e a consulta `MeusPedidosDAO` (com um pedido inserido à mão). As telas compilam, mas só rodam no Windows:
-**abram cada uma no Visual Studio para revisar o layout**.
+### Como a compra é finalizada (`PedidoService.FinalizarPedido`)
 
-Marcado com `TODO (grupo)` (busque por `TODO` no Visual Studio):
+1. Monta o pedido relendo cada produto do banco (estoque atual e preço congelado em `PrecoUnitario`);
+2. confere o estoque de **todos** os itens antes de alterar qualquer um (`EstoqueInsuficienteException`);
+3. calcula o frete (`IFreteService`) e o desconto (`IDescontoStrategy`);
+4. processa o pagamento escolhido (Pix, Boleto ou Cartão, sem saber qual — LSP);
+5. baixa o estoque, finaliza o pedido e grava tudo com um único `SaveChanges` (uma transação).
 
-- `PedidoService.FinalizarPedido` — passos descritos no comentário. É o trecho escolhido para o
-  **comparativo com e sem IA** (Seção 10.4 do plano): a versão A deve ser escrita pelo grupo sem IA.
-  Enquanto não for implementado, o botão "Confirmar compra" do checkout mostra um aviso e o carrinho é mantido.
-- Confirmar os valores de `DescontoQuantidade`.
+O comparativo com a versão escrita sem IA está em [`../Comparativo_IA/`](../Comparativo_IA/).
+
+As telas WinForms só rodam no Windows: **abram cada uma no Visual Studio para revisar o layout** antes de gravar o vídeo.

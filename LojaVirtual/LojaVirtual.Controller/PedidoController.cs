@@ -33,6 +33,9 @@ public class PedidoController
     /// <summary>Mostra o frete de cada opção na tela de Entrega.</summary>
     public decimal SimularFrete(CarrinhoDeCompras carrinho, OpcaoEntrega opcao) => _frete.CalcularFrete(carrinho.Itens, opcao);
 
+    /// <summary>Mostra o desconto na tela de Revisão, com a mesma regra usada ao finalizar (DRY).</summary>
+    public decimal SimularDesconto(CarrinhoDeCompras carrinho) => _pedidoService.SimularDesconto(carrinho.Itens);
+
     public Pedido Finalizar(DadosCheckout dados, CarrinhoDeCompras carrinho)
     {
         Pedido pedido = _pedidoService.FinalizarPedido(dados, carrinho.Itens);

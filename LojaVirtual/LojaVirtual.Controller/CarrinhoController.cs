@@ -15,7 +15,8 @@ public class CarrinhoController
 
     public void Adicionar(int produtoId, int quantidade)
     {
-        Produto produto = _produtos.ObterPorId(produtoId)
+        // Sem rastreamento: o carrinho vive a sessão inteira e precisa ver o estoque atual.
+        Produto produto = _produtos.ObterParaConsulta(produtoId)
             ?? throw new InvalidOperationException("Produto não encontrado.");
         Carrinho.Adicionar(produto, quantidade);
     }

@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using LojaVirtual.Controller;
 using LojaVirtual.Controller.Composicao;
 using LojaVirtual.Model.Entidades;
@@ -42,12 +43,12 @@ public partial class FrmInicial : Form
 
     private void BtnAdicionar_Click(object sender, EventArgs e)
     {
-        if (ProdutoSelecionado() is not Produto produto)
+        if (ProdutoSelecionado() is not LinhaProduto produto)
             return;
 
         try
         {
-            _sessao.Carrinho.Adicionar(produto.Id, QuantidadePadrao);
+            _sessao.Carrinho.Adicionar(produto.ProdutoId, QuantidadePadrao);
             MessageBox.Show($"\"{produto.Nome}\" adicionado ao carrinho.", Text);
         }
         catch (EstoqueInsuficienteException ex)
@@ -58,10 +59,10 @@ public partial class FrmInicial : Form
 
     private void BtnFavoritar_Click(object sender, EventArgs e)
     {
-        if (ProdutoSelecionado() is not Produto produto)
+        if (ProdutoSelecionado() is not LinhaProduto produto)
             return;
 
-        _fabrica.CriarFavoritosController().Favoritar(_sessao.Cliente.Id, produto.Id);
+        _fabrica.CriarFavoritosController().Favoritar(_sessao.Cliente.Id, produto.ProdutoId);
         MessageBox.Show($"\"{produto.Nome}\" adicionado aos favoritos.", Text);
     }
 
@@ -73,7 +74,7 @@ public partial class FrmInicial : Form
     private void BtnMeusPedidos_Click(object sender, EventArgs e) =>
         Abrir(new FrmMeusPedidos(_fabrica.CriarMeusPedidosController(), _sessao));
 
-    private Produto? ProdutoSelecionado() => dgvProdutos.CurrentRow?.DataBoundItem as Produto;
+    private LinhaProduto? ProdutoSelecionado() => dgvProdutos.CurrentRow?.DataBoundItem as LinhaProduto;
 
     private void AtualizarLista()
     {
@@ -81,7 +82,9 @@ public partial class FrmInicial : Form
             return;
 
         int? categoriaId = (cmbCategoria.SelectedItem as Categoria)?.Id;
-        dgvProdutos.DataSource = _catalogo.ListarProdutos(categoriaId, txtBusca.Text).ToList();
+        dgvProdutos.DataSource = _catalogo.ListarProdutos(categoriaId, txtBusca.Text)
+            .Select(LinhaProduto.De)
+            .ToList();
     }
 
     private void Abrir(Form formulario)
@@ -90,5 +93,21 @@ public partial class FrmInicial : Form
         {
             formulario.ShowDialog(this);
         }
+
+        AtualizarLista(); // o estoque muda depois de uma compra
+    }
+
+    /// <summary>O que a grade mostra: só as colunas que interessam ao cliente.</summary>
+    private sealed record LinhaProduto(
+        [property: Browsable(false)] int ProdutoId,
+        [property: DisplayName("Peça")] string Nome,
+        [property: DisplayName("Categoria")] string Categoria,
+        [property: DisplayName("Especificações")] string Especificacoes,
+        [property: DisplayName("Preço")] string Preco,
+        [property: DisplayName("Estoque")] int Estoque)
+    {
+        public static LinhaProduto De(Produto produto) =>
+            new(produto.Id, produto.Nome, produto.Categoria?.Nome ?? "-", produto.Especificacoes,
+                produto.Preco.ToString("C"), produto.Estoque);
     }
 }

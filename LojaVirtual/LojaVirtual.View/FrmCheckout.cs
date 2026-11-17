@@ -142,6 +142,7 @@ public partial class FrmCheckout : Form
     {
         OpcaoComFrete entrega = EntregaEscolhida!;
         decimal subtotal = Carrinho.CalcularSubtotal();
+        decimal desconto = _pedidos.SimularDesconto(Carrinho);
         var texto = new StringBuilder();
 
         texto.AppendLine($"Cliente: {_sessao.Cliente.Nome} — {_pedidos.DescreverDocumento(_sessao.Cliente.Id)}");
@@ -155,8 +156,8 @@ public partial class FrmCheckout : Form
         texto.AppendLine();
         texto.AppendLine($"Subtotal: {subtotal:C}");
         texto.AppendLine($"Frete:    {entrega.Frete:C}");
-        texto.AppendLine("Desconto: calculado ao confirmar a compra");
-        texto.AppendLine($"Total (sem desconto): {subtotal + entrega.Frete:C}");
+        texto.AppendLine($"Desconto: {desconto:C}");
+        texto.AppendLine($"Total:    {subtotal + entrega.Frete - desconto:C}");
         return texto.ToString();
     }
 
@@ -173,10 +174,6 @@ public partial class FrmCheckout : Form
         catch (EstoqueInsuficienteException ex)
         {
             Avisar(ex.Message);
-        }
-        catch (NotImplementedException)
-        {
-            Avisar("A finalização do pedido (PedidoService.FinalizarPedido) ainda não foi implementada.");
         }
         catch (InvalidOperationException ex)
         {

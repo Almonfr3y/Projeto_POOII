@@ -1,0 +1,48 @@
+// Versão A — PedidoService.FinalizarPedido escrito sem IA (primeira versão funcional).
+// Arquivo .txt de propósito: fica fora da compilação. A versão em uso é a B (LojaVirtual.Model/Servicos/PedidoService.cs).
+
+public Pedido FinalizarPedido(DadosCheckout dados, IReadOnlyList<PedidoItem> itensDoCarrinho)
+{
+    Pedido pedido = new Pedido();
+    pedido.ClienteId = dados.ClienteId;
+    pedido.EnderecoEntregaId = dados.EnderecoEntregaId;
+    pedido.OpcaoEntregaId = dados.OpcaoEntregaId;
+    pedido.Data = DateTime.Now;
+
+    decimal peso = 0;
+    foreach (PedidoItem i in itensDoCarrinho)
+    {
+        Produto p = _produtos.ObterPorId(i.ProdutoId);
+        if (p.Estoque < i.Quantidade)
+            throw new Exception("Sem estoque do produto " + p.Nome);
+
+        p.Estoque = p.Estoque - i.Quantidade;
+
+        PedidoItem novo = new PedidoItem();
+        novo.Produto = p;
+        novo.ProdutoId = p.Id;
+        novo.Quantidade = i.Quantidade;
+        novo.PrecoUnitario = p.Preco;
+        pedido.Itens.Add(novo);
+
+        peso = peso + p.PesoKg * i.Quantidade;
+    }
+
+    OpcaoEntrega op = _opcoesEntrega.ObterPorId(dados.OpcaoEntregaId);
+    pedido.ValorFrete = op.ValorBase + peso * op.ValorPorKg;
+
+    int qtd = 0;
+    foreach (PedidoItem i in pedido.Itens)
+        qtd = qtd + i.Quantidade;
+    if (qtd >= 5)
+        pedido.ValorDesconto = pedido.CalcularSubtotal() * 0.05m;
+
+    dados.Pagamento.Valor = pedido.CalcularSubtotal() + pedido.ValorFrete - pedido.ValorDesconto;
+    dados.Pagamento.Processar();
+    pedido.Pagamento = dados.Pagamento;
+    pedido.Status = StatusPedido.Finalizado;
+
+    _pedidos.Adicionar(pedido);
+    _unidadeDeTrabalho.SalvarAlteracoes();
+    return pedido;
+}
