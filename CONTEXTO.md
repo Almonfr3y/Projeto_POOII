@@ -31,7 +31,7 @@ base à Seção 10 do plano (uso de IA). Última atualização: **17/11/2026** (
 | 04/11 | Primeiros diagramas e plano (originais guardados em `_versao_original_20261104/`, fora do Git). |
 | 11/11 | Diagramas e plano corrigidos; escopo simplificado para o fluxo de compra do cliente; heranças `Pessoa → PF/PJ` e `Pagamento → Pix/Boleto/Cartão` (TPH) trazidas de volta; solution criada; repositório publicado. |
 | 12/11 | Telas Favoritos, Carrinho, Checkout (assistente em 5 etapas) e Meus Pedidos; migration `CriacaoInicial`; teste contra MySQL 8. |
-| 17/11 | (1) Commit/push das telas e da migration. (2) Regra de IA liberada. (3) `PedidoService.FinalizarPedido` implementado; comparativo com e sem IA; ajustes de estoque; plano e READMEs atualizados; revisão dos diagramas. (4) Código simplificado e comentado. (5) Este arquivo. (6) **Segunda simplificação, para o nível de um aluno de 3º período** (detalhes abaixo). (7) Commit `9591fd4` enviado ao GitHub; avaliação do nível do trabalho para um aluno sozinho (seção abaixo). |
+| 17/11 | (1) Commit/push das telas e da migration. (2) Regra de IA liberada. (3) `PedidoService.FinalizarPedido` implementado; comparativo com e sem IA; ajustes de estoque; plano e READMEs atualizados; revisão dos diagramas. (4) Código simplificado e comentado. (5) Este arquivo. (6) **Segunda simplificação, para o nível de um aluno de 3º período** (detalhes abaixo). (7) Commit `9591fd4` enviado ao GitHub; avaliação do nível do trabalho para um aluno sozinho (seção abaixo). (8) Plano ajustado para **trabalho individual**; criado o **material de estudo e roteiro do vídeo** em `Estudo/` (fora do Git). |
 
 ## Como o código está agora (segunda simplificação, 17/11 à tarde)
 
@@ -94,9 +94,8 @@ O professor fará perguntas sobre o código.
    `HasData` (seed), `HasConversion<string>`. É o trecho mais difícil de explicar; é o primeiro a estudar.
 3. **Padrões com nome:** Strategy (`IDescontoStrategy`) e Template Method (`Pagamento.Processar` →
    `GerarDadosDoPagamento`). São simples, mas é preciso saber explicar com as próprias palavras.
-4. **O plano (.docx) tem linguagem de profissional** (21 páginas, tabelas de SOLID/Clean Code, cronograma em fases)
-   e **ainda fala em 3 integrantes**: capa ("Equipe: 3 integrantes"), Sumário Executivo, 2.1, 7.2/Tabela 5, Tabela 9
-   (roteiro do vídeo dividido em 3 pessoas). **Precisa ser ajustado para trabalho individual.**
+4. **O plano (.docx) tem linguagem de profissional** (21 páginas, tabelas de SOLID/Clean Code, cronograma em fases).
+   ✅ Ajustado em 17/11 para trabalho individual (ver abaixo).
 5. **Comparativo com e sem IA:** a versão A foi escrita pela IA. Sozinho, não há "outro integrante" que tenha escrito
    sem IA. O mais seguro é o Miguel reescrever a versão A do jeito dele, ou dizer no vídeo que é uma reconstrução.
 
@@ -110,6 +109,35 @@ O professor fará perguntas sobre o código.
 - SQL puro no `MeusPedidosDAO`: JOIN, LEFT JOIN, GROUP BY, SUM, parâmetro `@clienteId` contra SQL injection.
 - OCP na prática: trocar `new DescontoQuantidade()` por `new SemDesconto()` no `FrmCheckout`.
 - Code First: o que é migration, `Add-Migration` e `Update-Database`.
+
+## Plano ajustado para trabalho individual (17/11)
+
+- **Capa:** "Autor: 【Seu nome completo】 — trabalho individual, envio no Blog" (**falta preencher o nome**).
+- **Texto:** Sumário Executivo, 2.1 ("Este trabalho é individual..."), 2.2, 3.1, 4.1, 6.1, 8.2, 10.1, 10.4 e 11 sem
+  "grupo/integrantes". Seção 7 renomeada para "Gestão do Projeto e Organização do Trabalho"; 7.2 virou
+  "Organização do Trabalho Individual", com a **Tabela 5 = três frentes de trabalho** (Modelagem e telas; Banco e
+  checkout; SQL puro, documentação e vídeo) e regras de trabalho de uma pessoa só.
+- **Tabela 1:** Trello e Git sem "atribuição por membro"/"revisão entre integrantes". **Tabela 8:** vídeo "com o nome
+  completo do autor na tela". **Tabela 9 (roteiro):** a coluna "Apresentador" virou "O que mostrar na tela", com
+  8 blocos (Abertura, Modelagem, Arquitetura, Execução, Banco, SQL puro, SOLID/Clean Code, IA/gestão/encerramento).
+- O curso na capa continua "Engenharia da Computação" (é o que está no enunciado). O Miguel disse que é de Engenharia
+  de Software: conferir qual nome usar.
+- PDF regerado com o Sumário atualizado.
+
+## Material de estudo e roteiro do vídeo (`Estudo/`, fora do Git)
+
+`Estudo/Material_de_Estudo_e_Roteiro.md` (e `.pdf`, 18 páginas). Fica fora do repositório público porque tem as
+respostas preparadas para o professor. Conteúdo:
+1. Plano de estudo de cerca de 3 horas · 2. Fala de 1 minuto sobre o projeto · 3. Mapa dos arquivos · 4. Conceitos do
+enunciado no código (OO, herança, relacionamentos, coleções, MVC, padrões, exceções) · 5. Caminho de uma compra
+linha a linha · 6. Banco (Code First, TPH, N×N, seed) · 7. SQL puro · 8. SOLID e Clean Code (com o ponto fraco do DIP
+e a resposta) · 9. Como falar do uso de IA · 10. **29 perguntas prováveis com respostas** · 11. Preparação do PC
+(VS, MySQL, `Update-Database`, `Drop-Database` para zerar antes de gravar) · 12. **Roteiro do vídeo com as falas**
+e a sequência exata da demonstração · 13. Cola de 1 página.
+
+**Dados da demonstração (conferidos pelo código):** login errado → "E-mail ou senha inválidos."; PC Gamer (estoque 4)
+com quantidade 5 → "Estoque insuficiente..."; 5 × Mouse gamer + entrega Padrão + Cartão 3x →
+subtotal R$ 749,50, frete R$ 20,70, desconto R$ 37,48, **total R$ 732,72**; estoque do mouse 40 → 35.
 
 ## Revisão das modelagens (diagramas)
 
@@ -132,9 +160,10 @@ Sem erros estruturais: classes, atributos, multiplicidades e tabelas batem com o
 - [ ] Abrir cada tela no Visual Studio (Windows) e conferir o layout.
 - [ ] Criar o banco: `Update-Database -Project LojaVirtual.Data -StartupProject LojaVirtual.Data` no Package Manager Console.
 - [ ] Revisar o código e reescrever (ou assumir no vídeo) a versão A do comparativo.
-- [ ] Ajustar o plano para trabalho individual: capa, Sumário Executivo, 2.1, 7.2/Tabela 5 e Tabela 9 (vídeo todo apresentado pelo Miguel, com o nome completo na tela).
+- [x] Ajustar o plano para trabalho individual.
+- [ ] Preencher o nome completo na capa do plano (Word) e exportar o PDF de novo (atualizar o Sumário antes).
 - [ ] Confirmar com o professor que o trabalho individual é aceito (o enunciado fala em grupos de 3).
-- [ ] Estudar os pontos da seção "Trabalho individual" acima.
+- [ ] Estudar com `Estudo/Material_de_Estudo_e_Roteiro.pdf` e ensaiar o vídeo uma vez cronometrando.
 - [ ] Copiar a Tabela 7 (registro de IA) para o Trello.
 - [ ] (Opcional) Redesenhar os diagramas com as correções acima.
 - [ ] Gravar o vídeo (roteiro na Seção 11.2 do plano) e enviar no Blog.
