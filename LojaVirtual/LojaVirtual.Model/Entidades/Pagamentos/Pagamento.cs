@@ -1,29 +1,26 @@
 namespace LojaVirtual.Model.Entidades.Pagamentos;
 
-/// <summary>
-/// HERANÇA: Pix, Boleto e Cartão são tipos de Pagamento (tabela tb_pagamento, TPH).
-/// Padrão Template Method: Processar() é igual para todos e chama GerarDadosDoPagamento(),
-/// que cada subclasse implementa do seu jeito. Quem processa não precisa saber o tipo (LSP).
-/// </summary>
+// Classe base dos pagamentos. Pix, Boleto e Cartão herdam dela (tabela tb_pagamento).
 public abstract class Pagamento
 {
     public int Id { get; set; }
     public decimal Valor { get; set; }
-    public DateTime? DataProcessamento { get; set; }   // null = ainda não processado
+    public DateTime? DataProcessamento { get; set; }
 
-    public int PedidoId { get; set; }                  // 1×1 com o pedido
+    public int PedidoId { get; set; }   // 1x1 com o pedido
     public Pedido? Pedido { get; set; }
 
-    /// <summary>Texto mostrado na Revisão e em Concluído (não é gravado no banco).</summary>
+    // Texto mostrado na tela de compra concluída (não vai para o banco).
     public abstract string Descricao { get; }
 
-    /// <summary>Pagamento simulado: valida o valor, gera os dados da forma escolhida e registra a data.</summary>
+    // O pagamento é simulado. A parte comum fica aqui e a parte
+    // diferente de cada forma de pagamento fica em GerarDadosDoPagamento.
     public void Processar()
     {
         if (Valor <= 0)
             throw new InvalidOperationException("O valor do pagamento deve ser maior que zero.");
 
-        GerarDadosDoPagamento();       // parte que muda em cada subclasse
+        GerarDadosDoPagamento();
         DataProcessamento = DateTime.Now;
     }
 

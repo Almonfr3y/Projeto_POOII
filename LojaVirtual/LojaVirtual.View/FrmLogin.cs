@@ -1,31 +1,30 @@
 using LojaVirtual.Controller;
-using LojaVirtual.Model.Excecoes;
+using LojaVirtual.Model.Entidades;
 
 namespace LojaVirtual.View;
 
-/// <summary>"Tela de Log In". Clientes de teste: ana@teste.com (PF) / empresa@teste.com (PJ), senha 123456.</summary>
+// Tela de login. Clientes de teste: ana@teste.com (PF) e empresa@teste.com (PJ), senha 123456.
 public partial class FrmLogin : Form
 {
-    private readonly ContaController _contas;
-    private readonly SessaoDoUsuario _sessao;
+    private ContaController _conta = new ContaController();
 
-    public FrmLogin(ContaController contas, SessaoDoUsuario sessao)
+    public Pessoa? ClienteLogado { get; private set; }
+
+    public FrmLogin()
     {
-        _contas = contas;
-        _sessao = sessao;
-        InitializeComponent(); // cria os controles desenhados no Designer
+        InitializeComponent();
     }
 
     private void BtnEntrar_Click(object sender, EventArgs e)
     {
-        try
+        ClienteLogado = _conta.Entrar(txtEmail.Text, txtSenha.Text);
+
+        if (ClienteLogado == null)
         {
-            _sessao.Entrar(_contas.Entrar(txtEmail.Text, txtSenha.Text));
-            DialogResult = DialogResult.OK; // fecha o login e avisa o Program que deu certo
+            MessageBox.Show("E-mail ou senha inválidos.");
+            return;
         }
-        catch (LoginInvalidoException ex)
-        {
-            Mensagem.Aviso(this, ex.Message);
-        }
+
+        DialogResult = DialogResult.OK;   // fecha o login
     }
 }

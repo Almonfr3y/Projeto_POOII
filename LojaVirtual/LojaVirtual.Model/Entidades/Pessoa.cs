@@ -1,35 +1,45 @@
 namespace LojaVirtual.Model.Entidades;
 
-/// <summary>
-/// Cliente que faz login e compra. HERANÇA: classe abstrata, só existem PessoaFisica e PessoaJuridica.
-/// No banco, as duas ficam na tabela tb_pessoa (TPH).
-/// </summary>
+// Cliente da loja. É abstrata: só existem PessoaFisica e PessoaJuridica (herança).
+// No banco as duas ficam na mesma tabela, tb_pessoa.
 public abstract class Pessoa
 {
     public int Id { get; set; }
-    public string Nome { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string Senha { get; set; } = string.Empty;  // texto simples: projeto acadêmico, sem dados reais
+    public string Nome { get; set; } = "";
+    public string Email { get; set; } = "";
+    public string Senha { get; set; } = "";   // texto simples (projeto acadêmico)
 
-    public ICollection<Endereco> Enderecos { get; set; } = new List<Endereco>(); // COMPOSIÇÃO 1×N
-    public ICollection<Produto> Favoritos { get; set; } = new List<Produto>();   // N×N (tb_favorito)
-    public ICollection<Pedido> Pedidos { get; set; } = new List<Pedido>();       // 1×N
+    public ICollection<Endereco> Enderecos { get; set; } = new List<Endereco>();   // 1xN (composição)
+    public ICollection<Produto> Favoritos { get; set; } = new List<Produto>();     // NxN (tb_favorito)
+    public ICollection<Pedido> Pedidos { get; set; } = new List<Pedido>();         // 1xN
 
-    /// <summary>"CPF ..." ou "CNPJ ...". Cada subclasse responde do seu jeito (polimorfismo / LSP).</summary>
+    // Cada subclasse devolve o seu documento (CPF ou CNPJ).
     public abstract string DescreverDocumento();
 
-    public bool SenhaConfere(string senha) => Senha == senha;
+    public bool SenhaConfere(string senha)
+    {
+        return Senha == senha;
+    }
 
     public void Favoritar(Produto produto)
     {
-        if (!Favoritos.Any(p => p.Id == produto.Id)) // não duplica o favorito
-            Favoritos.Add(produto);
+        foreach (Produto favorito in Favoritos)
+        {
+            if (favorito.Id == produto.Id)
+                return;   // já está nos favoritos
+        }
+        Favoritos.Add(produto);
     }
 
     public void Desfavoritar(int produtoId)
     {
-        Produto? produto = Favoritos.FirstOrDefault(p => p.Id == produtoId);
-        if (produto is not null)
-            Favoritos.Remove(produto);
+        foreach (Produto favorito in Favoritos)
+        {
+            if (favorito.Id == produtoId)
+            {
+                Favoritos.Remove(favorito);
+                return;
+            }
+        }
     }
 }

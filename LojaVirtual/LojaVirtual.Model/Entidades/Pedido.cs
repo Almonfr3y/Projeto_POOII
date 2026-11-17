@@ -4,42 +4,56 @@ using LojaVirtual.Model.Enums;
 
 namespace LojaVirtual.Model.Entidades;
 
-/// <summary>Uma compra do cliente.</summary>
+// Uma compra do cliente.
 public class Pedido
 {
-    public int Id { get; set; }                                   // número do pedido (gerado pelo banco)
+    public int Id { get; set; }   // número do pedido (gerado pelo banco)
     public DateTime Data { get; set; }
     public StatusPedido Status { get; set; } = StatusPedido.Aberto;
     public decimal ValorFrete { get; set; }
     public decimal ValorDesconto { get; set; }
 
-    public int ClienteId { get; set; }                            // 1×N: quem comprou
+    // 1xN: um cliente faz vários pedidos
+    public int ClienteId { get; set; }
     public Pessoa? Cliente { get; set; }
 
-    public int EnderecoEntregaId { get; set; }                    // N×1: para onde vai
+    public int EnderecoEntregaId { get; set; }
     public Endereco? EnderecoEntrega { get; set; }
 
-    public int OpcaoEntregaId { get; set; }                       // N×1: como vai
+    public int OpcaoEntregaId { get; set; }
     public OpcaoEntrega? OpcaoEntrega { get; set; }
 
-    public List<PedidoItem> Itens { get; set; } = new();          // COMPOSIÇÃO: itens só existem no pedido
+    // Composição: os itens só existem dentro do pedido
+    public List<PedidoItem> Itens { get; set; } = new List<PedidoItem>();
 
-    public Pagamento? Pagamento { get; set; }                     // 1×1: Pix, Boleto ou Cartão
+    // 1x1: cada pedido tem um pagamento (Pix, Boleto ou Cartão)
+    public Pagamento? Pagamento { get; set; }
 
-    public decimal CalcularSubtotal() => Itens.Sum(item => item.CalcularSubtotal());
+    public decimal CalcularSubtotal()
+    {
+        decimal subtotal = 0;
+        foreach (PedidoItem item in Itens)
+            subtotal += item.CalcularSubtotal();
+        return subtotal;
+    }
 
-    public decimal CalcularTotal() => CalcularSubtotal() + ValorFrete - ValorDesconto;
+    public decimal CalcularTotal()
+    {
+        return CalcularSubtotal() + ValorFrete - ValorDesconto;
+    }
 
-    /// <summary>Calcula o desconto com a regra recebida (Strategy): o pedido não sabe qual regra é.</summary>
-    public void AplicarDesconto(IDescontoStrategy estrategia) => ValorDesconto = estrategia.CalcularDesconto(this);
+    // O pedido não sabe qual regra de desconto está sendo usada (padrão Strategy).
+    public void AplicarDesconto(IDescontoStrategy desconto)
+    {
+        ValorDesconto = desconto.CalcularDesconto(this);
+    }
 
-    /// <summary>Marca o pedido como concluído, só se ele tiver itens e ainda estiver aberto.</summary>
     public void Finalizar()
     {
         if (Itens.Count == 0)
             throw new InvalidOperationException("Não é possível finalizar um pedido sem itens.");
         if (Status != StatusPedido.Aberto)
-            throw new InvalidOperationException($"Pedido em situação {Status} não pode ser finalizado.");
+            throw new InvalidOperationException("Este pedido já foi finalizado.");
 
         Status = StatusPedido.Finalizado;
     }

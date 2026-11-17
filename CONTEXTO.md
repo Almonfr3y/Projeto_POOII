@@ -31,63 +31,53 @@ base à Seção 10 do plano (uso de IA). Última atualização: **17/11/2026** (
 | 04/11 | Primeiros diagramas e plano (originais guardados em `_versao_original_20261104/`, fora do Git). |
 | 11/11 | Diagramas e plano corrigidos; escopo simplificado para o fluxo de compra do cliente; heranças `Pessoa → PF/PJ` e `Pagamento → Pix/Boleto/Cartão` (TPH) trazidas de volta; solution criada; repositório publicado. |
 | 12/11 | Telas Favoritos, Carrinho, Checkout (assistente em 5 etapas) e Meus Pedidos; migration `CriacaoInicial`; teste contra MySQL 8. |
-| 17/11 | (1) Commit/push das telas e da migration. (2) Regra de IA liberada. (3) `PedidoService.FinalizarPedido` implementado; comparativo com e sem IA; ajustes de estoque; plano e READMEs atualizados; revisão dos diagramas. (4) Código simplificado e comentado. (5) Este arquivo. |
+| 17/11 | (1) Commit/push das telas e da migration. (2) Regra de IA liberada. (3) `PedidoService.FinalizarPedido` implementado; comparativo com e sem IA; ajustes de estoque; plano e READMEs atualizados; revisão dos diagramas. (4) Código simplificado e comentado. (5) Este arquivo. (6) **Segunda simplificação, para o nível de um aluno de 3º período** (detalhes abaixo). |
 
-## O que foi feito em 17/11 (detalhes)
+## Como o código está agora (segunda simplificação, 17/11 à tarde)
 
-### Finalização da compra — `PedidoService.FinalizarPedido` (versão B, com IA)
-1. Monta o pedido relendo cada produto do banco (estoque atual, preço congelado em `PrecoUnitario`).
-2. Confere o estoque de **todos** os itens antes de alterar qualquer um.
-3. Calcula frete (`IFreteService`) e desconto (`IDescontoStrategy`).
-4. Processa o pagamento (Pix, Boleto ou Cartão — polimorfismo).
-5. Baixa o estoque, finaliza e grava tudo num único `SaveChanges` (uma transação).
+Pedido do grupo: "não quero um trabalho elaborado, quero que ele seja simples e funcione". O código anterior
+tinha arquitetura e sintaxe de profissional (serviços, repositórios, unidade de trabalho, fábrica de
+controladores, sintaxe C# 12). Foi reescrito mantendo **tudo o que o enunciado exige** e o diagrama de classes.
 
-A Revisão do checkout passou a mostrar desconto e total reais (`SimularDesconto`), e o Concluído mostra o
-número do pedido. Desconto confirmado: **5% a partir de 5 peças**.
+**O que saiu:** `PedidoService`, `FreteService`, `AutenticacaoService` e suas interfaces; os 5 repositórios e suas
+interfaces; `IUnidadeDeTrabalho`/`UnidadeDeTrabalho`; `FabricaDeControladores`; `CarrinhoController`;
+`ConfiguracaoBanco` e `LojaDbContextFactory`; `DadosCheckout`; `IMeusPedidosConsulta`; `LoginInvalidoException`;
+`Mensagem.cs`. Ao todo, 1215 linhas removidas e 850 adicionadas.
 
-### Correções encontradas na revisão
-- O carrinho usa o mesmo `DbContext` a sessão inteira e via estoque antigo depois de uma compra →
-  `IProdutoRepository.ObterParaConsulta` (sem rastreamento) e `AsNoTracking()` no catálogo.
-- O catálogo mostrava a entidade crua na grade → agora mostra só Peça, Categoria, Especificações, Preço e
-  Estoque, e é atualizado ao voltar de outra tela.
+**Como ficou:**
+- Cada controlador abre `using (LojaDbContext db = new LojaDbContext())` em cada método e usa LINQ direto.
+  Isso também resolve sozinho o problema antigo do estoque desatualizado no carrinho, porque cada operação lê
+  o banco de novo.
+- A string de conexão fica em `LojaDbContext.StringDeConexao` (`OnConfiguring`).
+- As telas criam os controladores com `new`. O login devolve `null` se errar a senha.
+- As grades usam tipos anônimos (`Select(p => new { p.Id, Peça = p.Nome, ... })`), com a coluna Id escondida.
+- `FrmCheckout` controla as etapas com um `int` e um vetor de painéis.
+- A sintaxe ficou básica: `if`/`foreach`, concatenação de strings, sem `=>` em métodos nem `?? throw`.
+- **Mantido igual ao diagrama de classes:** entidades, heranças (Template Method do `Pagamento`),
+  `IDescontoStrategy` (com `SemDesconto`/`DescontoQuantidade`), `CarrinhoDeCompras`, `StatusPedido`,
+  `EstoqueInsuficienteException`. O modelo do banco **não mudou** (`has-pending-model-changes` sem mudanças):
+  a migration `CriacaoInicial` continua valendo.
+- **SOLID agora (Seção 8 do plano):** SRP (um controlador por tela, regras nas entidades), OCP (`IDescontoStrategy`),
+  LSP (Pagamento e Pessoa), ISP (interface de desconto pequena, controladores separados), DIP (`PedidoController`
+  recebe `IDescontoStrategy` pelo construtor).
+- **Bug corrigido:** o desconto de 5% podia ter 3 casas decimais (ex.: R$ 37,475). O banco gravava R$ 37,48 e o total
+  da tela "Concluído" ficava diferente do total em "Meus Pedidos". Agora `DescontoQuantidade` arredonda para 2 casas.
 
 ### Comparativo com e sem IA (`Comparativo_IA/`)
-- **Versão A (sem IA)** — `VersaoA_SemIA.cs.txt`: um método de ~45 linhas. Funciona no caso feliz, mas baixa o
-  estoque pela metade quando um item falha, lança `Exception` genérica (a tela não trata), ignora a
-  `IDescontoStrategy` (quebra o OCP), duplica o cálculo de frete (quebra o DRY) e gera 4 avisos de nulidade.
-- **Versão B (com IA)** — a do sistema. Discussão completa em `Comparativo_IA/README.md` e na Tabela 7a do plano.
+- O trecho comparado agora é o `PedidoController.Finalizar`.
+- **Versão A** (`VersaoA_SemIA.cs.txt`): usa `throw new Exception` (derruba a tela), ignora a `IDescontoStrategy` (OCP),
+  não arredonda centavos, recalcula o frete na mão (DRY), não confere `null` nem carrinho vazio, muda o `Status`
+  direto e não usa `using`. Gera 2 avisos de compilação.
+- **Versão B:** a do sistema. Tabela 7a do plano e `Comparativo_IA/README.md`.
 - ⚠️ A versão A foi **escrita pela IA a pedido do grupo**, imitando uma primeira versão sem IA. Recomendação:
-  alguém do grupo revisar e ajustar com as próprias palavras, ou dizer no vídeo que é uma reconstrução.
+  alguém do grupo reescrever com as próprias palavras, ou dizer no vídeo que é uma reconstrução.
 
-### Documentação atualizada
-- **Plano (.docx/.pdf):** Seção 10 reescrita para a nova regra (ferramenta: Claude Code; prompts reais);
-  Tabela 7 (registro de IA) preenchida; Tabela 7a (comparativo); checklist com Concluído/Pendente.
-  O PDF foi gerado com o Sumário atualizado (no Word: botão direito no Sumário → Atualizar campo).
-- **READMEs** da raiz e de `LojaVirtual/` atualizados.
-
-### Simplificação e comentários do código
-- Mantido tudo o que o enunciado exige e o plano cita como evidência de SOLID/MVC: interfaces de repositório e
-  serviço, `IDescontoStrategy`, heranças, `FabricaDeControladores`, `UnidadeDeTrabalho`, `MeusPedidosDAO`.
-- Removido/simplificado:
-  - `LojaVirtual.Data/Configuracoes/` (12 classes em 3 arquivos) → Fluent API inteira dentro do `LojaDbContext`,
-    em 4 seções. Verificado com `dotnet ef migrations has-pending-model-changes`: o modelo do banco não mudou.
-  - `ClienteLogado` → o login devolve a própria `Pessoa`.
-  - `SessaoDoUsuario.EstaLogado` (não era usado).
-  - Novo `View/Mensagem.cs` no lugar do `MessageBox` repetido em todas as telas.
-  - `FrmCheckout`: validação do cartão mais curta e "4 últimos dígitos" num só lugar.
-- Comentários: de 131 para 325 linhas. Cada classe tem resumo; linhas não óbvias explicadas; marcados no
-  código os conceitos do enunciado (HERANÇA, COMPOSIÇÃO, AGREGAÇÃO, 1×1, N×N, OCP, DIP, LSP).
-- Não comentados: `*.Designer.cs` (o Visual Studio regera) e as Migrations (geradas pelo EF).
-
-## Verificação
-
-- Compilação: **0 avisos, 0 erros** (no Linux, com `-p:EnableWindowsTargeting=true`).
-- Teste de ponta a ponta contra **MySQL 8 real** (container temporário), chamando os controladores como as
-  telas chamam — **22 verificações, todas OK**: compra com Pix; desconto com 5 peças e Cartão 3x; falha de
-  estoque no 2º item seguida de nova tentativa (1º item baixado uma única vez); boleto; carrinho vazio
-  rejeitado; carrinho e catálogo vendo o estoque atual; cliente PJ (CNPJ); Meus Pedidos em SQL puro com o
-  mesmo total do EF.
-- **Não testado:** a interface gráfica. WinForms só roda no Windows — abram cada tela no Visual Studio.
+### Documentação atualizada nesta etapa
+- **Plano (.docx/.pdf):** Seções 3.1, 3.3, 4.1, 4.2, 8 (SOLID), 9 (Clean Code, Tabela 6), 10.2 (novo prompt),
+  Tabela 7 (nova linha) e 10.4/Tabela 7a reescritas; Figura 2 trocada; Sumário atualizado no PDF.
+- **Diagrama de arquitetura** redesenhado: `diagrama_arquitetura_camadas.png`, com o arquivo-fonte
+  `diagrama_arquitetura_camadas.html` (abrir no navegador para editar).
+- READMEs da raiz, de `LojaVirtual/` e de `Comparativo_IA/`.
 
 ## Revisão das modelagens (diagramas)
 
@@ -100,15 +90,15 @@ Sem erros estruturais: classes, atributos, multiplicidades e tabelas batem com o
 3. **Classes — navegabilidade** (conceito citado no enunciado): Pessoa↔Pedido, Pedido↔Pagamento,
    Pedido↔PedidoItem e Endereco↔Pessoa são bidirecionais no código, mas o diagrama tem seta só de um lado.
 4. **Classes:** `StatusPedido.Cancelado` não é usado (está comentado no código como reservado).
-5. **Classes (opcional):** incluir `CarrinhoDeCompras` e `PedidoService` (centrais no fluxo e no tema coleções).
-6. **Arquitetura:** o Controller referencia a Data, mas só na `FabricaDeControladores` — vale uma nota.
+5. **Classes (opcional):** incluir `CarrinhoDeCompras` (central no fluxo e no tema coleções).
+6. **Arquitetura:** ✅ redesenhado em 17/11 (sem fábrica, serviços e repositórios).
 7. **Excalidraw:** as telas de Cadastro e Perfil e o "Produto em Promoção" estão desenhados mas fora do escopo —
    marcar como "fora do escopo" ou explicar no vídeo.
 
 ## Pendências do grupo (para 18/11)
 
 - [ ] Abrir cada tela no Visual Studio (Windows) e conferir o layout.
-- [ ] Criar o banco: `Update-Database` no Package Manager Console (projeto padrão `LojaVirtual.Data`).
+- [ ] Criar o banco: `Update-Database -Project LojaVirtual.Data -StartupProject LojaVirtual.Data` no Package Manager Console.
 - [ ] Revisar o código e o comparativo (o professor fará perguntas sobre o código).
 - [ ] Nomes dos integrantes nas Tabelas 5 e 9 do plano.
 - [ ] Copiar a Tabela 7 (registro de IA) para o Trello.
@@ -117,10 +107,13 @@ Sem erros estruturais: classes, atributos, multiplicidades e tabelas batem com o
 
 ## Notas técnicas para quem continuar
 
-- Conexão: variável de ambiente `LOJA_VIRTUAL_DB`; sem ela, usa
-  `server=localhost;port=3306;database=loja_pecas;user=root;password=;` (`LojaVirtual.Data/ConfiguracaoBanco.cs`).
-- Mudou alguma entidade ou o `LojaDbContext`? `Add-Migration <Nome>` e depois `Update-Database`.
-- Para trocar a regra de desconto (demonstrar o OCP): em `FabricaDeControladores.CriarPedidoController`,
-  troque `new DescontoQuantidade()` por `new SemDesconto()` ou por uma nova classe que implemente `IDescontoStrategy`.
+- Conexão: constante `LojaDbContext.StringDeConexao`
+  (`server=localhost;port=3306;database=loja_pecas;user=root;password=;`). O `MeusPedidosDAO` usa a mesma.
+- Mudou alguma entidade ou o `LojaDbContext`? `Add-Migration <Nome>` e depois `Update-Database`
+  (ambos com `-Project LojaVirtual.Data -StartupProject LojaVirtual.Data`).
+- Para trocar a regra de desconto (demonstrar o OCP): em `FrmCheckout`, troque `new DescontoQuantidade()` por
+  `new SemDesconto()` ou por uma nova classe que implemente `IDescontoStrategy`.
+- O projeto `LojaVirtual.Data` está com `<Nullable>disable</Nullable>` (evita avisos nos `DbSet`); o Model continua
+  com `enable`, e isso não pode mudar sem gerar migration nova (o EF usa a nulidade para decidir NOT NULL).
 - Ao editar o `.docx` do plano no Linux, gere o PDF de forma que o Sumário seja atualizado; não deixe o
   LibreOffice salvar por cima do `.docx` (pode estragar a formatação do Word).

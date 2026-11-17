@@ -1,45 +1,56 @@
+using LojaVirtual.Data;
 using LojaVirtual.Model.Entidades;
-using LojaVirtual.Model.Repositorios;
+using Microsoft.EntityFrameworkCore;
 
 namespace LojaVirtual.Controller;
 
-/// <summary>Tela "Favoritos" (N×N Cliente—Produto).</summary>
+// Controlador da tela Favoritos (relacionamento NxN entre cliente e produto).
 public class FavoritosController
 {
-    private readonly IClienteRepository _clientes;
-    private readonly IProdutoRepository _produtos;
-    private readonly IUnidadeDeTrabalho _unidadeDeTrabalho;
-
-    public FavoritosController(IClienteRepository clientes, IProdutoRepository produtos, IUnidadeDeTrabalho unidadeDeTrabalho)
+    public List<Produto> Listar(int clienteId, string textoBusca)
     {
-        _clientes = clientes;
-        _produtos = produtos;
-        _unidadeDeTrabalho = unidadeDeTrabalho;
-    }
+        using (LojaDbContext db = new LojaDbContext())
+        {
+            Pessoa cliente = BuscarCliente(db, clienteId);
 
-    /// <summary>Favoritos do cliente em ordem alfabética, com filtro opcional ("pesquise favorito").</summary>
-    public IReadOnlyList<Produto> Listar(int clienteId, string? textoBusca = null)
-    {
-        IEnumerable<Produto> favoritos = ObterCliente(clienteId).Favoritos;
-        if (!string.IsNullOrWhiteSpace(textoBusca))
-            favoritos = favoritos.Where(p => p.Nome.Contains(textoBusca, StringComparison.OrdinalIgnoreCase)); // ignora maiúsculas
+            List<Produto> lista = new List<Produto>();
+            foreach (Produto produto in cliente.Favoritos)
+            {
+                if (produto.Nome.ToLower().Contains(textoBusca.ToLower()))
+                    lista.Add(produto);
+            }
 
-        return favoritos.OrderBy(p => p.Nome).ToList();
+            return lista.OrderBy(p => p.Nome).ToList();
+        }
     }
 
     public void Favoritar(int clienteId, int produtoId)
     {
-        Produto produto = _produtos.ObterPorId(produtoId) ?? throw new InvalidOperationException("Produto não encontrado.");
-        ObterCliente(clienteId).Favoritar(produto);
-        _unidadeDeTrabalho.SalvarAlteracoes(); // insere a linha em tb_favorito
+        using (LojaDbContext db = new LojaDbContext())
+        {
+            Pessoa cliente = BuscarCliente(db, clienteId);
+            Produto? produto = db.Produtos.Find(produtoId);
+            if (produto == null)
+                return;
+
+            cliente.Favoritar(produto);
+            db.SaveChanges();   // grava uma linha em tb_favorito
+        }
     }
 
     public void Desfavoritar(int clienteId, int produtoId)
     {
-        ObterCliente(clienteId).Desfavoritar(produtoId);
-        _unidadeDeTrabalho.SalvarAlteracoes(); // apaga a linha de tb_favorito
+        using (LojaDbContext db = new LojaDbContext())
+        {
+            Pessoa cliente = BuscarCliente(db, clienteId);
+            cliente.Desfavoritar(produtoId);
+            db.SaveChanges();   // apaga a linha de tb_favorito
+        }
     }
 
-    private Pessoa ObterCliente(int clienteId) =>
-        _clientes.ObterComDetalhes(clienteId) ?? throw new InvalidOperationException("Cliente não encontrado.");
+    // Carrega o cliente junto com a lista de favoritos (Include).
+    private Pessoa BuscarCliente(LojaDbContext db, int clienteId)
+    {
+        return db.Pessoas.Include(p => p.Favoritos).First(p => p.Id == clienteId);
+    }
 }

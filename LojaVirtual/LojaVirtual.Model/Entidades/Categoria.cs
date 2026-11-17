@@ -1,13 +1,17 @@
 namespace LojaVirtual.Model.Entidades;
 
-/// <summary>Agrupa produtos. AGREGAÇÃO: o produto continua existindo sem a categoria.</summary>
+// Categoria das peças (Hardware, Periféricos, PCs).
+// Agregação: o produto continua existindo mesmo sem a categoria.
 public class Categoria
 {
     public int Id { get; set; }
-    public string Nome { get; set; } = string.Empty;
+    public string Nome { get; set; } = "";
 
-    public ICollection<Produto> Produtos { get; set; } = new List<Produto>(); // lado 1×N
+    public ICollection<Produto> Produtos { get; set; } = new List<Produto>();
 
-    // Usado pelo ComboBox de categorias para mostrar o nome.
-    public override string ToString() => Nome;
+    // O ComboBox de categorias mostra o que o ToString devolve.
+    public override string ToString()
+    {
+        return Nome;
+    }
 }

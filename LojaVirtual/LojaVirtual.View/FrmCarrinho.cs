@@ -1,92 +1,82 @@
-using System.ComponentModel;
-using LojaVirtual.Controller.Composicao;
-using LojaVirtual.Model.Entidades;
 using LojaVirtual.Model.Excecoes;
 
 namespace LojaVirtual.View;
 
-/// <summary>Tela "Carrinho": itens, alterar quantidade, remover, subtotal e "Finalizar Compra".</summary>
+// Tela Carrinho: alterar quantidade, remover item, ver subtotal e finalizar a compra.
 public partial class FrmCarrinho : Form
 {
-    private readonly SessaoDoUsuario _sessao;
-    private readonly FabricaDeControladores _fabrica;
+    private SessaoDoUsuario _sessao;
 
-    public FrmCarrinho(SessaoDoUsuario sessao, FabricaDeControladores fabrica)
+    public FrmCarrinho(SessaoDoUsuario sessao)
     {
         _sessao = sessao;
-        _fabrica = fabrica;
         InitializeComponent();
     }
 
-    private void FrmCarrinho_Load(object sender, EventArgs e) => AtualizarItens();
+    private void FrmCarrinho_Load(object sender, EventArgs e)
+    {
+        AtualizarItens();
+    }
 
     // Ao clicar numa linha, o campo de quantidade mostra a quantidade daquele item.
     private void DgvItens_SelectionChanged(object sender, EventArgs e)
     {
-        if (ItemSelecionado() is LinhaCarrinho item)
-            nudQuantidade.Value = item.Quantidade;
+        if (dgvItens.CurrentRow != null)
+            nudQuantidade.Value = (int)dgvItens.CurrentRow.Cells["Quantidade"].Value;
     }
 
     private void BtnAlterar_Click(object sender, EventArgs e)
     {
-        if (ItemSelecionado() is not LinhaCarrinho item)
+        if (dgvItens.CurrentRow == null)
             return;
 
+        int produtoId = (int)dgvItens.CurrentRow.Cells["Id"].Value;
         try
         {
-            _sessao.Carrinho.AlterarQuantidade(item.ProdutoId, (int)nudQuantidade.Value); // 0 remove o item
+            _sessao.Carrinho.AlterarQuantidade(produtoId, (int)nudQuantidade.Value);
             AtualizarItens();
         }
         catch (EstoqueInsuficienteException ex)
         {
-            Mensagem.Aviso(this, ex.Message);
+            MessageBox.Show(ex.Message);
         }
     }
 
     private void BtnRemover_Click(object sender, EventArgs e)
     {
-        if (ItemSelecionado() is not LinhaCarrinho item)
+        if (dgvItens.CurrentRow == null)
             return;
 
-        _sessao.Carrinho.Remover(item.ProdutoId);
+        int produtoId = (int)dgvItens.CurrentRow.Cells["Id"].Value;
+        _sessao.Carrinho.Remover(produtoId);
         AtualizarItens();
     }
 
     private void BtnFinalizar_Click(object sender, EventArgs e)
     {
-        if (_sessao.Carrinho.Carrinho.EstaVazio)
-        {
-            Mensagem.Info(this, "O carrinho está vazio.");
-            return;
-        }
+        FrmCheckout checkout = new FrmCheckout(_sessao);
+        checkout.ShowDialog();
 
-        // Abre o checkout. OK = compra concluída: fecha o carrinho. Senão, só atualiza a lista.
-        using var checkout = new FrmCheckout(_fabrica.CriarPedidoController(), _sessao);
-        if (checkout.ShowDialog(this) == DialogResult.OK)
+        // Se a compra deu certo o carrinho ficou vazio e esta tela pode fechar.
+        if (_sessao.Carrinho.Itens.Count == 0)
             Close();
         else
             AtualizarItens();
     }
 
-    private LinhaCarrinho? ItemSelecionado() => dgvItens.CurrentRow?.DataBoundItem as LinhaCarrinho;
-
     private void AtualizarItens()
     {
-        dgvItens.DataSource = _sessao.Carrinho.Carrinho.Itens.Select(LinhaCarrinho.De).ToList();
-        lblSubtotal.Text = $"Subtotal: {_sessao.Carrinho.CalcularSubtotal():C}";
-        btnFinalizar.Enabled = !_sessao.Carrinho.Carrinho.EstaVazio; // sem itens, não dá para finalizar
-    }
+        dgvItens.DataSource = _sessao.Carrinho.Itens.Select(i => new
+        {
+            Id = i.ProdutoId,
+            Peça = i.Produto == null ? "" : i.Produto.Nome,
+            i.Quantidade,
+            PreçoUnitário = i.PrecoUnitario.ToString("C"),
+            Subtotal = i.CalcularSubtotal().ToString("C")
+        }).ToList();
+        dgvItens.Columns["Id"].Visible = false;
 
-    /// <summary>O que a grade mostra: uma linha por item do carrinho.</summary>
-    private sealed record LinhaCarrinho(
-        [property: Browsable(false)] int ProdutoId,
-        [property: DisplayName("Peça")] string Produto,
-        [property: DisplayName("Quantidade")] int Quantidade,
-        [property: DisplayName("Preço unitário")] string PrecoUnitario,
-        [property: DisplayName("Subtotal")] string Subtotal)
-    {
-        public static LinhaCarrinho De(PedidoItem item) =>
-            new(item.ProdutoId, item.Produto?.Nome ?? "-", item.Quantidade,
-                item.PrecoUnitario.ToString("C"), item.CalcularSubtotal().ToString("C"));
+        lblSubtotal.Text = "Subtotal: " + _sessao.Carrinho.CalcularSubtotal().ToString("C");
+        btnFinalizar.Enabled = _sessao.Carrinho.Itens.Count > 0;   // sem itens não dá para finalizar
     }
 }

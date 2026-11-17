@@ -285,7 +285,6 @@ partial class FrmCheckout
         StartPosition = FormStartPosition.CenterParent;
         Text = "Finalizar compra";
         Load += FrmCheckout_Load;
-        FormClosing += FrmCheckout_FormClosing;
         pnlEndereco.ResumeLayout(false);
         pnlEndereco.PerformLayout();
         pnlEntrega.ResumeLayout(false);

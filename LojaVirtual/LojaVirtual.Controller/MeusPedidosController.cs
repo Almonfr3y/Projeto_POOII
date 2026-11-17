@@ -1,13 +1,14 @@
-using LojaVirtual.Model.Consultas;
+using LojaVirtual.Data.Consultas;
+using LojaVirtual.Model;
 
 namespace LojaVirtual.Controller;
 
-/// <summary>Tela "Meus Pedidos". A consulta por trás é SQL puro (MeusPedidosDAO).</summary>
+// Controlador da tela Meus Pedidos. A consulta é feita em SQL puro no MeusPedidosDAO.
 public class MeusPedidosController
 {
-    private readonly IMeusPedidosConsulta _consulta;
-
-    public MeusPedidosController(IMeusPedidosConsulta consulta) => _consulta = consulta;
-
-    public IReadOnlyList<ResumoPedido> Listar(int clienteId) => _consulta.ListarPorCliente(clienteId);
+    public List<ResumoPedido> Listar(int clienteId)
+    {
+        MeusPedidosDAO dao = new MeusPedidosDAO();
+        return dao.ListarPorCliente(clienteId);
+    }
 }

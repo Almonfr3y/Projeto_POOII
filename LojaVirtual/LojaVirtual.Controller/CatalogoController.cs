@@ -1,23 +1,42 @@
+using LojaVirtual.Data;
 using LojaVirtual.Model.Entidades;
-using LojaVirtual.Model.Repositorios;
+using Microsoft.EntityFrameworkCore;
 
 namespace LojaVirtual.Controller;
 
-/// <summary>Tela Inicial: categorias, busca e lista de peças.</summary>
+// Controlador da Tela Inicial: categorias e lista de peças.
 public class CatalogoController
 {
-    private readonly IProdutoRepository _produtos;
-    private readonly ICategoriaRepository _categorias;
-
-    public CatalogoController(IProdutoRepository produtos, ICategoriaRepository categorias)
+    public List<Categoria> ListarCategorias()
     {
-        _produtos = produtos;
-        _categorias = categorias;
+        using (LojaDbContext db = new LojaDbContext())
+        {
+            return db.Categorias.OrderBy(c => c.Id).ToList();
+        }
     }
 
-    public IReadOnlyList<Categoria> ListarCategorias() => _categorias.Listar();
+    // categoriaId = 0 mostra todas as categorias.
+    public List<Produto> ListarProdutos(int categoriaId, string textoBusca)
+    {
+        using (LojaDbContext db = new LojaDbContext())
+        {
+            IQueryable<Produto> consulta = db.Produtos.Include(p => p.Categoria);
 
-    // categoriaId null = todas; textoBusca vazio = sem filtro de nome.
-    public IReadOnlyList<Produto> ListarProdutos(int? categoriaId, string? textoBusca) =>
-        _produtos.Listar(categoriaId, textoBusca);
+            if (categoriaId != 0)
+                consulta = consulta.Where(p => p.CategoriaId == categoriaId);
+
+            if (textoBusca != "")
+                consulta = consulta.Where(p => p.Nome.Contains(textoBusca));
+
+            return consulta.OrderBy(p => p.Nome).ToList();
+        }
+    }
+
+    public Produto? BuscarProduto(int produtoId)
+    {
+        using (LojaDbContext db = new LojaDbContext())
+        {
+            return db.Produtos.Find(produtoId);
+        }
+    }
 }

@@ -1,52 +1,45 @@
-using System.ComponentModel;
-using System.Data.Common;
 using LojaVirtual.Controller;
-using LojaVirtual.Model.Consultas;
+using LojaVirtual.Model;
 
 namespace LojaVirtual.View;
 
-/// <summary>Tela "Meus Pedidos". Os dados vêm da consulta em SQL puro (MeusPedidosDAO, ADO.NET).</summary>
+// Tela Meus Pedidos. Os dados vêm da consulta em SQL puro (MeusPedidosDAO).
 public partial class FrmMeusPedidos : Form
 {
-    private readonly MeusPedidosController _meusPedidos;
-    private readonly SessaoDoUsuario _sessao;
+    private SessaoDoUsuario _sessao;
+    private MeusPedidosController _meusPedidos = new MeusPedidosController();
 
-    public FrmMeusPedidos(MeusPedidosController meusPedidos, SessaoDoUsuario sessao)
+    public FrmMeusPedidos(SessaoDoUsuario sessao)
     {
-        _meusPedidos = meusPedidos;
         _sessao = sessao;
         InitializeComponent();
     }
 
     private void FrmMeusPedidos_Load(object sender, EventArgs e)
     {
-        try
-        {
-            IReadOnlyList<ResumoPedido> pedidos = _meusPedidos.Listar(_sessao.Cliente.Id);
-            dgvPedidos.DataSource = pedidos.Select(LinhaPedido.De).ToList();
+        List<ResumoPedido> pedidos = _meusPedidos.Listar(_sessao.Cliente.Id);
 
-            // Rodapé: mensagem para quem não comprou ainda, ou quantidade e total gasto.
-            lblResumo.Text = pedidos.Count == 0
-                ? "Você ainda não fez nenhum pedido."
-                : $"{pedidos.Count} pedido(s) — total gasto: {pedidos.Sum(p => p.Total):C}";
-        }
-        catch (DbException ex) // erro do banco (ex.: MySQL desligado)
+        dgvPedidos.DataSource = pedidos.Select(p => new
         {
-            Mensagem.Erro(this, $"Não foi possível consultar os pedidos: {ex.Message}");
-        }
-    }
+            Nº = p.Numero,
+            Data = p.Data.ToString("dd/MM/yyyy HH:mm"),
+            Situação = p.Status,
+            Itens = p.QuantidadeItens,
+            FormaDePagamento = p.FormaPagamento,
+            Total = p.Total.ToString("C")
+        }).ToList();
 
-    /// <summary>O que a grade mostra: uma linha por pedido, com data e valores formatados.</summary>
-    private sealed record LinhaPedido(
-        [property: DisplayName("Nº")] int Numero,
-        [property: DisplayName("Data")] string Data,
-        [property: DisplayName("Situação")] string Status,
-        [property: DisplayName("Itens")] int Itens,
-        [property: DisplayName("Forma de pagamento")] string FormaPagamento,
-        [property: DisplayName("Total")] string Total)
-    {
-        public static LinhaPedido De(ResumoPedido resumo) =>
-            new(resumo.Numero, resumo.Data.ToString("dd/MM/yyyy HH:mm"), resumo.Status, resumo.QuantidadeItens,
-                resumo.FormaPagamento, resumo.Total.ToString("C"));
+        if (pedidos.Count == 0)
+        {
+            lblResumo.Text = "Você ainda não fez nenhum pedido.";
+        }
+        else
+        {
+            decimal totalGasto = 0;
+            foreach (ResumoPedido pedido in pedidos)
+                totalGasto += pedido.Total;
+
+            lblResumo.Text = pedidos.Count + " pedido(s) - total gasto: " + totalGasto.ToString("C");
+        }
     }
 }

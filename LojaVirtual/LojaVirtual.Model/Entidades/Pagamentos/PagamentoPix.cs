@@ -2,10 +2,16 @@ namespace LojaVirtual.Model.Entidades.Pagamentos;
 
 public class PagamentoPix : Pagamento
 {
-    public string CodigoPix { get; set; } = string.Empty;
+    public string CodigoPix { get; set; } = "";
 
-    public override string Descricao => "Pix";
+    public override string Descricao
+    {
+        get { return "Pix"; }
+    }
 
-    // Simula o código "copia e cola" com um identificador aleatório de 32 caracteres.
-    protected override void GerarDadosDoPagamento() => CodigoPix = Guid.NewGuid().ToString("N").ToUpperInvariant();
+    protected override void GerarDadosDoPagamento()
+    {
+        // Simula o código "copia e cola" com um código aleatório.
+        CodigoPix = Guid.NewGuid().ToString("N").ToUpper();
+    }
 }

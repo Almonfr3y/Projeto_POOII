@@ -1,0 +1,77 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:2000px;background:#fff;font-family:"Noto Sans","Liberation Sans",sans-serif;color:#1c2b36;padding:56px 70px 30px}
+h1{text-align:center;font-size:46px;font-weight:700;letter-spacing:.3px}
+.sub{text-align:center;color:#5a6b78;font-size:22px;margin-top:10px}
+.layer{position:relative;border:2px solid #d3e0e8;border-left:12px solid #1f5f6e;border-radius:18px;background:#eaf2f8;padding:26px 36px 30px;margin-top:34px}
+.layer.data{background:#e6eef3}
+.ttl{font-size:31px;font-weight:700;letter-spacing:.5px}
+.ttl span{font-size:22px;font-weight:400;color:#4a5b68;margin-left:16px;letter-spacing:0}
+.badge{position:absolute;right:36px;top:30px;background:#1f5f6e;color:#fff;font-weight:700;font-size:20px;padding:9px 24px;border-radius:24px}
+.row{display:flex;flex-wrap:wrap;gap:14px;margin-top:22px}
+.box{border:2px solid #5e7f8f;border-radius:10px;background:#fff;padding:10px 18px}
+.box b{display:block;font-size:23px}
+.box i{font-style:normal;color:#5a6b78;font-size:17px}
+.new{border-color:#c46a1a;background:#fff6eb}.new b{color:#b0570f}
+.arrow{text-align:center;color:#4a5b68;font-size:21px;margin-top:14px;margin-bottom:-18px}
+.grp{flex:1;border:2px dashed #9fb4c0;border-radius:12px;padding:16px 22px 20px;background:#fff}
+.grp.orange{border-color:#d08a4a;background:#fff8ef}
+.grp h3{font-size:23px;color:#1f5f6e}.grp.orange h3{color:#b0570f}
+.db{margin-top:34px;background:#15303d;border-radius:22px;color:#fff;text-align:center;padding:28px 40px 30px}
+.db h2{font-size:32px}.db .s{color:#9fb4c0;font-size:21px;margin-top:6px}
+.tabs{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:22px}
+.t{font-family:"Liberation Mono",monospace;font-size:20px;border:2px solid #4c6a78;border-radius:8px;padding:6px 16px;color:#dbe6ec}
+.t.o{border-color:#d08a4a;color:#f2c28f}
+.leg{text-align:center;color:#4a5b68;font-size:20px;margin-top:22px}
+.leg span{display:inline-block;width:24px;height:18px;border:2px solid #c46a1a;background:#fff6eb;vertical-align:middle;margin-right:8px}
+</style></head><body>
+<h1>Arquitetura em Camadas — Padrão MVC</h1>
+<div class="sub">Loja Virtual de Peças de Computador · C# / .NET 8 · Windows Forms · Entity Framework Core 8 (Code First) · MySQL</div>
+
+<div class="layer"><div class="ttl">VIEW<span>Interface gráfica — Windows Forms · telas do cliente, seguindo o desenho de telas</span></div><div class="badge">View · MVC</div>
+<div class="row">
+<div class="box new"><b>FrmLogin</b><i>log in</i></div>
+<div class="box"><b>FrmInicial</b><i>catálogo + busca</i></div>
+<div class="box new"><b>FrmFavoritos</b><i>favoritos</i></div>
+<div class="box"><b>FrmCarrinho</b><i>itens do carrinho</i></div>
+<div class="box"><b>FrmCheckout</b><i>endereço → entrega → pagamento → revisão → concluído</i></div>
+<div class="box new"><b>FrmMeusPedidos</b><i>SQL puro</i></div>
+<div class="box"><b>SessaoDoUsuario</b><i>cliente logado + carrinho</i></div>
+</div></div>
+<div class="arrow">eventos de interface · chamadas de métodos · retornos com dados ▼</div>
+
+<div class="layer"><div class="ttl">CONTROLLER<span>Coordena cada tela: busca os dados e chama as regras do Model</span></div><div class="badge">Controller · MVC</div>
+<div class="row">
+<div class="box new"><b>ContaController</b></div>
+<div class="box"><b>CatalogoController</b></div>
+<div class="box new"><b>FavoritosController</b></div>
+<div class="box"><b>PedidoController</b><i>finaliza a compra · recebe a IDescontoStrategy</i></div>
+<div class="box new"><b>MeusPedidosController</b></div>
+</div></div>
+<div class="arrow">usa as entidades e regras do Model · abre um LojaDbContext por operação ▼</div>
+
+<div class="layer"><div class="ttl">MODEL<span>Entidades, regras de negócio e comportamentos</span></div><div class="badge">Model · MVC</div>
+<div class="row">
+<div class="box"><b>Entidades</b><i>Pessoa (PF / PJ) · Endereco · Produto · Categoria · Pedido · PedidoItem · OpcaoEntrega</i></div>
+<div class="box new"><b>Pagamento (herança)</b><i>Pix · Boleto · Cartão</i></div>
+<div class="box"><b>IDescontoStrategy</b><i>OCP — SemDesconto · DescontoQuantidade</i></div>
+<div class="box"><b>CarrinhoDeCompras</b><i>coleção em memória</i></div>
+<div class="box"><b>EstoqueInsuficienteException</b><i>exceção específica</i></div>
+</div></div>
+<div class="arrow">LINQ no EF · SQL nativo em "Meus Pedidos" ▼</div>
+
+<div class="layer data"><div class="ttl">DATA<span>Acesso a dados e persistência</span></div><div class="badge">Acesso a Dados</div>
+<div class="row">
+<div class="grp"><h3>Entity Framework Core — Code First</h3><div class="row">
+<div class="box"><b>LojaDbContext</b><i>DbSet + Fluent API</i></div>
+<div class="box"><b>Migrations + CargaInicial</b><i>schema e dados de demonstração</i></div></div></div>
+<div class="grp orange"><h3>ADO.NET — Funcionalidade de SQL puro</h3><div class="row">
+<div class="box new"><b>MeusPedidosDAO</b><i>MySqlConnection + MySqlCommand</i></div>
+<div class="box"><b>Consulta agregada</b><i>JOIN · GROUP BY · SUM</i></div></div></div>
+</div></div>
+<div class="arrow">persistência relacional (1×1 · 1×N · N×N · herança) ▼</div>
+
+<div class="db"><h2>MySQL — Banco de Dados Relacional</h2><div class="s">schema "loja_pecas" criado pelo EF Code First via Migrations</div>
+<div class="tabs"><span class="t">tb_pessoa (TPH: PF + PJ)</span><span class="t o">tb_endereco</span><span class="t o">tb_favorito (N×N)</span><span class="t">tb_categoria</span><span class="t">tb_produto</span><span class="t">tb_pedido</span><span class="t">tb_pedido_item</span><span class="t o">tb_opcao_entrega</span><span class="t o">tb_pagamento (TPH: Pix · Boleto · Cartão)</span></div></div>
+<div class="leg"><span></span>novo em relação ao plano inicial · escopo: o cliente (PF ou PJ) fazendo uma compra (produtos e clientes já vêm no banco)</div>
+</body></html>

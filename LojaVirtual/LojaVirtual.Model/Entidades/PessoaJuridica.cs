@@ -1,10 +1,13 @@
 namespace LojaVirtual.Model.Entidades;
 
-/// <summary>Cliente pessoa jurídica: herda tudo de Pessoa e acrescenta CNPJ e razão social.</summary>
+// Cliente pessoa jurídica: herda de Pessoa e tem CNPJ e razão social.
 public class PessoaJuridica : Pessoa
 {
-    public string Cnpj { get; set; } = string.Empty;
-    public string RazaoSocial { get; set; } = string.Empty;
+    public string Cnpj { get; set; } = "";
+    public string RazaoSocial { get; set; } = "";
 
-    public override string DescreverDocumento() => $"CNPJ {Cnpj} — {RazaoSocial}";
+    public override string DescreverDocumento()
+    {
+        return "CNPJ " + Cnpj + " - " + RazaoSocial;
+    }
 }

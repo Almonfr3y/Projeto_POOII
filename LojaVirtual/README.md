@@ -1,4 +1,4 @@
-# LojaVirtual — estrutura inicial da solução
+# LojaVirtual — solução do Visual Studio
 
 > **Uso de IA:** o código foi gerado com auxílio de IA (Claude Code) e revisado pelo grupo.
 > O professor liberou o uso de IA sem limite de nível; o registro está na Seção 10 do plano.
@@ -17,12 +17,13 @@ inicial), área do operador e relatórios. Senhas em texto simples. O cliente po
 
 | Projeto | Camada | Conteúdo |
 |---|---|---|
-| `LojaVirtual.View` | View | Windows Forms: `FrmLogin`, `FrmInicial`, `FrmFavoritos`, `FrmCarrinho`, `FrmCheckout`, `FrmMeusPedidos` |
-| `LojaVirtual.Controller` | Controller | Controladores + `Composicao/FabricaDeControladores` (composition root) |
-| `LojaVirtual.Model` | Model | Entidades, herança de `Pagamento` (Pix/Boleto/Cartão), carrinho, descontos (Strategy), serviços, interfaces |
-| `LojaVirtual.Data` | Dados | `LojaDbContext` (Code First + Fluent API + seed), repositórios EF, `MeusPedidosDAO` (SQL puro / ADO.NET) |
+| `LojaVirtual.View` | View | Windows Forms: `FrmLogin`, `FrmInicial`, `FrmFavoritos`, `FrmCarrinho`, `FrmCheckout`, `FrmMeusPedidos` + `SessaoDoUsuario` (cliente logado e carrinho) |
+| `LojaVirtual.Controller` | Controller | Um controlador por tela: `ContaController`, `CatalogoController`, `FavoritosController`, `PedidoController`, `MeusPedidosController` |
+| `LojaVirtual.Model` | Model | Entidades, heranças (`Pessoa` → PF/PJ, `Pagamento` → Pix/Boleto/Cartão), `CarrinhoDeCompras`, descontos (`IDescontoStrategy`), `EstoqueInsuficienteException` |
+| `LojaVirtual.Data` | Dados | `LojaDbContext` (Code First + Fluent API), `CargaInicial` (seed), Migrations e `MeusPedidosDAO` (SQL puro / ADO.NET) |
 
-Referências: View → Controller → Model; Controller → Data (somente na fábrica); Data → Model.
+Referências: View → Controller → Model e Data; Data → Model. A View nunca acessa o banco direto.
+Cada método de controlador abre um `LojaDbContext` com `using`, faz o que precisa e fecha a conexão.
 
 ## Requisitos do enunciado → onde estão
 
@@ -34,41 +35,33 @@ Referências: View → Controller → Model; Controller → Data (somente na fá
 | N×N | Pedido—Produto via `PedidoItem`; Pessoa—Produto (favoritos, `tb_favorito`) |
 | SQL puro | `LojaVirtual.Data/Consultas/MeusPedidosDAO.cs` (tela Meus Pedidos) |
 | Code First | `LojaDbContext` + Migrations |
+| SOLID | Seção 8 do plano (ex.: OCP com `IDescontoStrategy`, LSP com as heranças) |
+| Clean Code | Seção 9 do plano |
 
 ## Como rodar no Visual Studio
 
 1. Abra `LojaVirtual.sln` e defina `LojaVirtual.View` como projeto de inicialização.
-2. A conexão vem da variável de ambiente `LOJA_VIRTUAL_DB`. Sem ela, é usado
-   `server=localhost;port=3306;database=loja_pecas;user=root;password=;` (`LojaVirtual.Data/ConfiguracaoBanco.cs`).
+2. A conexão fica em `LojaDbContext.StringDeConexao`:
+   `server=localhost;port=3306;database=loja_pecas;user=root;password=;`. Se o MySQL de vocês tiver senha, troque ali.
 3. Crie o banco pelo Code First. A migration `CriacaoInicial` já está em `LojaVirtual.Data/Migrations`
-   (cria as 9 tabelas e a carga inicial). No Package Manager Console, com projeto padrão `LojaVirtual.Data`:
+   (cria as 9 tabelas e a carga inicial). No Package Manager Console:
    ```
-   Update-Database
+   Update-Database -Project LojaVirtual.Data -StartupProject LojaVirtual.Data
    ```
-   Se mudarem alguma entidade, gerem uma nova migration com `Add-Migration <Nome>` antes do `Update-Database`.
-4. Entre com **ana@teste.com** (pessoa física) ou **empresa@teste.com** (pessoa jurídica), senha **123456** (dados fictícios da carga inicial).
+   Se mudarem alguma entidade, gerem uma nova migration antes:
+   `Add-Migration <Nome> -Project LojaVirtual.Data -StartupProject LojaVirtual.Data`.
+4. Entre com **ana@teste.com** (pessoa física) ou **empresa@teste.com** (pessoa jurídica), senha **123456**.
 
-## Situação
+## Como a compra é finalizada (`PedidoController.Finalizar`)
 
-Tudo implementado: entidades e relacionamentos, Fluent API, carga inicial (3 categorias, 12 peças,
-3 opções de entrega, 1 cliente PF e 1 cliente PJ com endereços), repositórios, login, carrinho, frete por peso,
-desconto por quantidade (5% a partir de 5 peças), herança de pagamento com processamento simulado,
-finalização do pedido (`PedidoService.FinalizarPedido`), consulta **Meus Pedidos** em SQL puro e todas as telas:
+1. Para cada item do carrinho, relê o produto do banco e chama `BaixarEstoque` (lança
+   `EstoqueInsuficienteException` se faltar peça) e guarda o preço atual no item;
+2. calcula o frete (`OpcaoEntrega.CalcularFrete`) e o desconto (`IDescontoStrategy`, 5% a partir de 5 peças);
+3. processa o pagamento escolhido (Pix, Boleto ou Cartão, sem saber qual — polimorfismo);
+4. grava pedido, itens, pagamento e estoque com um único `SaveChanges`. Se algo der errado antes disso,
+   nada é gravado.
 
-- `FrmLogin`, `FrmInicial` (catálogo, busca, categorias, favoritar, adicionar ao carrinho);
-- `FrmFavoritos` (pesquisa, desfavoritar, adicionar ao carrinho);
-- `FrmCarrinho` (alterar quantidade, remover, subtotal, "Finalizar Compra");
-- `FrmCheckout` — assistente Endereço → Entrega (frete simulado de cada opção) → Pagamento (Pix, Boleto
-  ou Cartão) → Revisão (com CPF/CNPJ, frete, desconto e total) → Concluído (número do pedido);
-- `FrmMeusPedidos` (grade alimentada pela consulta em SQL puro).
-
-### Como a compra é finalizada (`PedidoService.FinalizarPedido`)
-
-1. Monta o pedido relendo cada produto do banco (estoque atual e preço congelado em `PrecoUnitario`);
-2. confere o estoque de **todos** os itens antes de alterar qualquer um (`EstoqueInsuficienteException`);
-3. calcula o frete (`IFreteService`) e o desconto (`IDescontoStrategy`);
-4. processa o pagamento escolhido (Pix, Boleto ou Cartão, sem saber qual — LSP);
-5. baixa o estoque, finaliza o pedido e grava tudo com um único `SaveChanges` (uma transação).
+Para demonstrar o OCP: em `FrmCheckout`, troque `new DescontoQuantidade()` por `new SemDesconto()`.
 
 O comparativo com a versão escrita sem IA está em [`../Comparativo_IA/`](../Comparativo_IA/).
 

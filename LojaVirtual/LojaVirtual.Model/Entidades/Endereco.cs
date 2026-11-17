@@ -1,20 +1,23 @@
 namespace LojaVirtual.Model.Entidades;
 
-/// <summary>Endereço salvo do cliente. COMPOSIÇÃO: só existe junto com o cliente.</summary>
+// Endereço salvo do cliente.
+// Composição: o endereço só existe junto com o cliente.
 public class Endereco
 {
     public int Id { get; set; }
-    public string Apelido { get; set; } = string.Empty;   // ex.: "Casa", "Trabalho"
-    public string Logradouro { get; set; } = string.Empty;
-    public string Numero { get; set; } = string.Empty;
-    public string Bairro { get; set; } = string.Empty;
-    public string Cidade { get; set; } = string.Empty;
-    public string Uf { get; set; } = string.Empty;
-    public string Cep { get; set; } = string.Empty;
+    public string Apelido { get; set; } = "";   // ex.: "Casa", "Trabalho"
+    public string Logradouro { get; set; } = "";
+    public string Numero { get; set; } = "";
+    public string Bairro { get; set; } = "";
+    public string Cidade { get; set; } = "";
+    public string Uf { get; set; } = "";
+    public string Cep { get; set; } = "";
 
-    public int ClienteId { get; set; }       // chave estrangeira
-    public Pessoa? Cliente { get; set; }     // navegação para o dono do endereço
+    public int ClienteId { get; set; }
+    public Pessoa? Cliente { get; set; }
 
-    // Texto mostrado na lista da etapa Endereço e na Revisão.
-    public override string ToString() => $"{Apelido}: {Logradouro}, {Numero} — {Bairro}, {Cidade}/{Uf}";
+    public override string ToString()
+    {
+        return Apelido + ": " + Logradouro + ", " + Numero + " - " + Bairro + ", " + Cidade + "/" + Uf;
+    }
 }

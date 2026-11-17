@@ -21,10 +21,10 @@ Produtos, categorias, clientes e endereços já vêm cadastrados no banco (carga
 | `Plano_Implementacao_Loja_Virtual_Pecas_PC.docx` / `.pdf` | Plano de implementação (escopo, arquitetura, modelo de dados, SOLID, Clean Code, uso de IA, cronograma e roteiro do vídeo) |
 | `diagrama_casos_de_uso.png` | Diagrama de casos de uso |
 | `diagrama_de_classes.png` | Diagrama de classes |
-| `diagrama_arquitetura_camadas.png` | Arquitetura em camadas (MVC) |
+| `diagrama_arquitetura_camadas.png` / `.html` | Arquitetura em camadas (MVC); o `.html` é o arquivo-fonte (abra no navegador para editar e tirar um print) |
 | `Projeto_POOII-2026-11-11-0730.excalidraw` | Desenho do fluxo de telas (abrir em [excalidraw.com](https://excalidraw.com)) |
 | `Modelagem_POO2_20261104.excalidraw` | Primeiro rascunho das telas |
-| [`Comparativo_IA/`](Comparativo_IA/) | Comparativo com e sem IA do `PedidoService.FinalizarPedido` (versões A e B + discussão crítica) |
+| [`Comparativo_IA/`](Comparativo_IA/) | Comparativo com e sem IA do `PedidoController.Finalizar` (versões A e B + discussão crítica) |
 
 ## Requisitos do enunciado
 

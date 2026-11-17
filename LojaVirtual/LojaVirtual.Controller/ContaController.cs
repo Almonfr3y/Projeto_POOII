@@ -1,18 +1,23 @@
+using LojaVirtual.Data;
 using LojaVirtual.Model.Entidades;
-using LojaVirtual.Model.Servicos;
 
 namespace LojaVirtual.Controller;
 
-/// <summary>
-/// Tela de Log In. Os controladores só ligam a tela às regras do Model: não têm regra de negócio
-/// nem acesso direto ao banco (MVC).
-/// </summary>
+// Controlador da tela de login.
 public class ContaController
 {
-    private readonly IAutenticacaoService _autenticacao;
+    // Devolve o cliente se o e-mail e a senha estiverem certos, ou null se não estiverem.
+    public Pessoa? Entrar(string email, string senha)
+    {
+        using (LojaDbContext db = new LojaDbContext())
+        {
+            // O EF já devolve um PessoaFisica ou um PessoaJuridica, conforme a coluna TipoPessoa.
+            Pessoa? cliente = db.Pessoas.FirstOrDefault(p => p.Email == email.Trim());
 
-    public ContaController(IAutenticacaoService autenticacao) => _autenticacao = autenticacao;
+            if (cliente == null || !cliente.SenhaConfere(senha))
+                return null;
 
-    // Devolve o cliente logado ou lança LoginInvalidoException (a tela mostra a mensagem).
-    public Pessoa Entrar(string email, string senha) => _autenticacao.Entrar(email, senha);
+            return cliente;
+        }
+    }
 }

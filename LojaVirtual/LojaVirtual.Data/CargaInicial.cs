@@ -3,18 +3,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LojaVirtual.Data;
 
-/// <summary>
-/// Dados inseridos pela Migration (seed). Cadastro de produtos e de clientes ficou fora do escopo:
-/// tudo o que a compra precisa já vem pronto no banco.
-/// </summary>
-internal static class CargaInicial
+// Dados iniciais do banco (seed). Como não temos tela de cadastro,
+// produtos, clientes e endereços já vêm prontos pela migration.
+public static class CargaInicial
 {
     // Ids das categorias, para os produtos abaixo ficarem legíveis.
     private const int Hardware = 1;
     private const int Perifericos = 2;
     private const int Pcs = 3;
 
-    /// <summary>HasData: o EF coloca estes INSERTs dentro da migration.</summary>
+    // HasData: o EF coloca estes INSERTs dentro da migration.
     public static void Aplicar(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Categoria>().HasData(
@@ -58,6 +56,8 @@ internal static class CargaInicial
     }
 
     // Atalho para não repetir o nome de cada propriedade nas 12 peças.
-    private static Produto Peca(int id, int categoriaId, string nome, string especificacoes, decimal preco, decimal pesoKg, int estoque) =>
-        new() { Id = id, CategoriaId = categoriaId, Nome = nome, Especificacoes = especificacoes, Preco = preco, PesoKg = pesoKg, Estoque = estoque };
+    private static Produto Peca(int id, int categoriaId, string nome, string especificacoes, decimal preco, decimal pesoKg, int estoque)
+    {
+        return new Produto { Id = id, CategoriaId = categoriaId, Nome = nome, Especificacoes = especificacoes, Preco = preco, PesoKg = pesoKg, Estoque = estoque };
+    }
 }

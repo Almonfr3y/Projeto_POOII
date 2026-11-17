@@ -1,18 +1,22 @@
-// Versão A — PedidoService.FinalizarPedido escrito sem IA (primeira versão funcional).
-// Arquivo .txt de propósito: fica fora da compilação. A versão em uso é a B (LojaVirtual.Model/Servicos/PedidoService.cs).
+// Versão A - PedidoController.Finalizar escrito sem IA (primeira versão que funcionou).
+// Arquivo .txt de propósito, para ficar fora da compilação.
+// A versão usada no sistema é a B: LojaVirtual.Controller/PedidoController.cs
 
-public Pedido FinalizarPedido(DadosCheckout dados, IReadOnlyList<PedidoItem> itensDoCarrinho)
+public Pedido Finalizar(int clienteId, int enderecoId, OpcaoEntrega opcaoEntrega, Pagamento pagamento, CarrinhoDeCompras carrinho)
 {
+    LojaDbContext db = new LojaDbContext();
+
     Pedido pedido = new Pedido();
-    pedido.ClienteId = dados.ClienteId;
-    pedido.EnderecoEntregaId = dados.EnderecoEntregaId;
-    pedido.OpcaoEntregaId = dados.OpcaoEntregaId;
+    pedido.ClienteId = clienteId;
+    pedido.EnderecoEntregaId = enderecoId;
+    pedido.OpcaoEntregaId = opcaoEntrega.Id;
     pedido.Data = DateTime.Now;
 
     decimal peso = 0;
-    foreach (PedidoItem i in itensDoCarrinho)
+    int qtd = 0;
+    foreach (PedidoItem i in carrinho.Itens)
     {
-        Produto p = _produtos.ObterPorId(i.ProdutoId);
+        Produto p = db.Produtos.Find(i.ProdutoId);
         if (p.Estoque < i.Quantidade)
             throw new Exception("Sem estoque do produto " + p.Nome);
 
@@ -26,23 +30,24 @@ public Pedido FinalizarPedido(DadosCheckout dados, IReadOnlyList<PedidoItem> ite
         pedido.Itens.Add(novo);
 
         peso = peso + p.PesoKg * i.Quantidade;
+        qtd = qtd + i.Quantidade;
     }
 
-    OpcaoEntrega op = _opcoesEntrega.ObterPorId(dados.OpcaoEntregaId);
-    pedido.ValorFrete = op.ValorBase + peso * op.ValorPorKg;
+    // frete
+    pedido.ValorFrete = opcaoEntrega.ValorBase + peso * opcaoEntrega.ValorPorKg;
 
-    int qtd = 0;
-    foreach (PedidoItem i in pedido.Itens)
-        qtd = qtd + i.Quantidade;
+    // desconto de 5% a partir de 5 peças
     if (qtd >= 5)
         pedido.ValorDesconto = pedido.CalcularSubtotal() * 0.05m;
 
-    dados.Pagamento.Valor = pedido.CalcularSubtotal() + pedido.ValorFrete - pedido.ValorDesconto;
-    dados.Pagamento.Processar();
-    pedido.Pagamento = dados.Pagamento;
+    pagamento.Valor = pedido.CalcularSubtotal() + pedido.ValorFrete - pedido.ValorDesconto;
+    pagamento.Processar();
+    pedido.Pagamento = pagamento;
     pedido.Status = StatusPedido.Finalizado;
 
-    _pedidos.Adicionar(pedido);
-    _unidadeDeTrabalho.SalvarAlteracoes();
+    db.Pedidos.Add(pedido);
+    db.SaveChanges();
+
+    carrinho.Limpar();
     return pedido;
 }

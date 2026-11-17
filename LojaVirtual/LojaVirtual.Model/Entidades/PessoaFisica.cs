@@ -1,9 +1,12 @@
 namespace LojaVirtual.Model.Entidades;
 
-/// <summary>Cliente pessoa física: herda tudo de Pessoa e acrescenta o CPF.</summary>
+// Cliente pessoa física: herda de Pessoa e tem CPF.
 public class PessoaFisica : Pessoa
 {
-    public string Cpf { get; set; } = string.Empty;
+    public string Cpf { get; set; } = "";
 
-    public override string DescreverDocumento() => $"CPF {Cpf}";
+    public override string DescreverDocumento()
+    {
+        return "CPF " + Cpf;
+    }
 }

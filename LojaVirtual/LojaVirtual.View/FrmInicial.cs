@@ -1,114 +1,119 @@
-using System.ComponentModel;
 using LojaVirtual.Controller;
-using LojaVirtual.Controller.Composicao;
 using LojaVirtual.Model.Entidades;
 using LojaVirtual.Model.Excecoes;
 
 namespace LojaVirtual.View;
 
-/// <summary>
-/// "Tela Inicial": busca, categorias, peças e os botões Carrinho, Favoritos e Meus Pedidos.
-/// A tela só captura cliques e mostra dados; as regras ficam no Controller/Model (MVC).
-/// </summary>
+// Tela Inicial: busca, categorias, lista de peças e botões Carrinho, Favoritos e Meus Pedidos.
 public partial class FrmInicial : Form
 {
-    private const int QuantidadePadrao = 1;              // cada clique em "Adicionar" põe 1 unidade
-    private const string TodasAsCategorias = "(todas)";  // primeira opção do filtro
+    private SessaoDoUsuario _sessao;
+    private CatalogoController _catalogo = new CatalogoController();
+    private FavoritosController _favoritos = new FavoritosController();
 
-    private readonly FabricaDeControladores _fabrica;
-    private readonly SessaoDoUsuario _sessao;
-    private readonly CatalogoController _catalogo;
-
-    public FrmInicial(FabricaDeControladores fabrica, SessaoDoUsuario sessao)
+    public FrmInicial(SessaoDoUsuario sessao)
     {
-        _fabrica = fabrica;
         _sessao = sessao;
-        _catalogo = fabrica.CriarCatalogoController();
         InitializeComponent();
     }
 
     private void FrmInicial_Load(object sender, EventArgs e)
     {
-        lblCliente.Text = $"Olá, {_sessao.Cliente.Nome}";
+        lblCliente.Text = "Olá, " + _sessao.Cliente.Nome;
 
-        // Filtro: "(todas)" seguido das categorias do banco.
-        var categorias = new List<object> { TodasAsCategorias };
-        categorias.AddRange(_catalogo.ListarCategorias());
-        cmbCategoria.DataSource = categorias;
+        // Primeira opção do filtro é "(todas)", depois as categorias do banco.
+        cmbCategoria.Items.Add("(todas)");
+        foreach (Categoria categoria in _catalogo.ListarCategorias())
+            cmbCategoria.Items.Add(categoria);
+        cmbCategoria.SelectedIndex = 0;   // isso já dispara o evento que carrega a lista
+    }
+
+    private void BtnBuscar_Click(object sender, EventArgs e)
+    {
         AtualizarLista();
     }
 
-    private void BtnBuscar_Click(object sender, EventArgs e) => AtualizarLista();
-
-    private void CmbCategoria_SelectedIndexChanged(object sender, EventArgs e) => AtualizarLista();
+    private void CmbCategoria_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        AtualizarLista();
+    }
 
     private void BtnAdicionar_Click(object sender, EventArgs e)
     {
-        if (ProdutoSelecionado() is not LinhaProduto produto) // nenhuma linha selecionada
+        Produto? produto = ProdutoSelecionado();
+        if (produto == null)
             return;
 
         try
         {
-            _sessao.Carrinho.Adicionar(produto.ProdutoId, QuantidadePadrao);
-            Mensagem.Info(this, $"\"{produto.Nome}\" adicionado ao carrinho.");
+            _sessao.Carrinho.Adicionar(produto, 1);
+            MessageBox.Show("\"" + produto.Nome + "\" adicionado ao carrinho.");
         }
         catch (EstoqueInsuficienteException ex)
         {
-            Mensagem.Aviso(this, ex.Message);
+            MessageBox.Show(ex.Message);
         }
     }
 
     private void BtnFavoritar_Click(object sender, EventArgs e)
     {
-        if (ProdutoSelecionado() is not LinhaProduto produto)
+        Produto? produto = ProdutoSelecionado();
+        if (produto == null)
             return;
 
-        _fabrica.CriarFavoritosController().Favoritar(_sessao.Cliente.Id, produto.ProdutoId);
-        Mensagem.Info(this, $"\"{produto.Nome}\" adicionado aos favoritos.");
+        _favoritos.Favoritar(_sessao.Cliente.Id, produto.Id);
+        MessageBox.Show("\"" + produto.Nome + "\" adicionado aos favoritos.");
     }
 
-    // Botões do topo: cada um abre a sua tela.
-    private void BtnCarrinho_Click(object sender, EventArgs e) => Abrir(new FrmCarrinho(_sessao, _fabrica));
+    private void BtnCarrinho_Click(object sender, EventArgs e)
+    {
+        FrmCarrinho tela = new FrmCarrinho(_sessao);
+        tela.ShowDialog();
+        AtualizarLista();   // o estoque pode ter mudado depois de uma compra
+    }
 
-    private void BtnFavoritos_Click(object sender, EventArgs e) =>
-        Abrir(new FrmFavoritos(_fabrica.CriarFavoritosController(), _sessao));
+    private void BtnFavoritos_Click(object sender, EventArgs e)
+    {
+        FrmFavoritos tela = new FrmFavoritos(_sessao);
+        tela.ShowDialog();
+    }
 
-    private void BtnMeusPedidos_Click(object sender, EventArgs e) =>
-        Abrir(new FrmMeusPedidos(_fabrica.CriarMeusPedidosController(), _sessao));
-
-    // A linha selecionada na grade (ou null).
-    private LinhaProduto? ProdutoSelecionado() => dgvProdutos.CurrentRow?.DataBoundItem as LinhaProduto;
+    private void BtnMeusPedidos_Click(object sender, EventArgs e)
+    {
+        FrmMeusPedidos tela = new FrmMeusPedidos(_sessao);
+        tela.ShowDialog();
+    }
 
     private void AtualizarLista()
     {
-        if (!IsHandleCreated) // o ComboBox dispara o evento antes da tela terminar de carregar
-            return;
+        // Se a categoria escolhida for "(todas)", passa 0.
+        int categoriaId = 0;
+        Categoria? categoria = cmbCategoria.SelectedItem as Categoria;
+        if (categoria != null)
+            categoriaId = categoria.Id;
 
-        int? categoriaId = (cmbCategoria.SelectedItem as Categoria)?.Id; // "(todas)" não é Categoria → null
-        dgvProdutos.DataSource = _catalogo.ListarProdutos(categoriaId, txtBusca.Text)
-            .Select(LinhaProduto.De)
-            .ToList();
+        List<Produto> produtos = _catalogo.ListarProdutos(categoriaId, txtBusca.Text);
+
+        // A grade mostra só algumas colunas. O Id fica escondido e é usado nos botões.
+        dgvProdutos.DataSource = produtos.Select(p => new
+        {
+            p.Id,
+            Peça = p.Nome,
+            Categoria = p.Categoria == null ? "" : p.Categoria.Nome,
+            Especificações = p.Especificacoes,
+            Preço = p.Preco.ToString("C"),
+            p.Estoque
+        }).ToList();
+        dgvProdutos.Columns["Id"].Visible = false;
     }
 
-    private void Abrir(Form formulario)
+    // Busca no banco o produto da linha selecionada na grade.
+    private Produto? ProdutoSelecionado()
     {
-        using (formulario)               // libera a tela da memória ao fechar
-            formulario.ShowDialog(this); // ShowDialog: a Tela Inicial espera a outra fechar
+        if (dgvProdutos.CurrentRow == null)
+            return null;
 
-        AtualizarLista(); // o estoque pode ter mudado depois de uma compra
-    }
-
-    /// <summary>O que a grade mostra: só as colunas que interessam ao cliente.</summary>
-    private sealed record LinhaProduto(
-        [property: Browsable(false)] int ProdutoId,              // escondido, usado nos botões
-        [property: DisplayName("Peça")] string Nome,
-        [property: DisplayName("Categoria")] string Categoria,
-        [property: DisplayName("Especificações")] string Especificacoes,
-        [property: DisplayName("Preço")] string Preco,
-        [property: DisplayName("Estoque")] int Estoque)
-    {
-        public static LinhaProduto De(Produto produto) =>
-            new(produto.Id, produto.Nome, produto.Categoria?.Nome ?? "-", produto.Especificacoes,
-                produto.Preco.ToString("C"), produto.Estoque); // "C" = formato de moeda (R$)
+        int produtoId = (int)dgvProdutos.CurrentRow.Cells["Id"].Value;
+        return _catalogo.BuscarProduto(produtoId);
     }
 }

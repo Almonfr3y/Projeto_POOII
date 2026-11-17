@@ -1,220 +1,234 @@
-using System.Text;
 using LojaVirtual.Controller;
-using LojaVirtual.Model.Carrinho;
-using LojaVirtual.Model.Checkout;
+using LojaVirtual.Model.Descontos;
 using LojaVirtual.Model.Entidades;
 using LojaVirtual.Model.Entidades.Pagamentos;
 using LojaVirtual.Model.Excecoes;
 
 namespace LojaVirtual.View;
 
-/// <summary>
-/// Assistente do checkout, como no desenho: Endereço → Entrega → Pagamento → Revisão → Concluído.
-/// Cada etapa é um painel; só um fica visível por vez. A tela só coleta as escolhas:
-/// a regra de finalização fica no PedidoService (SRP).
-/// </summary>
+// Checkout em etapas: Endereço -> Entrega -> Pagamento -> Revisão -> Concluído.
+// Cada etapa é um painel, e só o painel da etapa atual fica visível.
 public partial class FrmCheckout : Form
 {
-    private const int DigitosMinimosDoCartao = 13;   // menor número de cartão válido
-    private const int DigitosMaximosDoCartao = 19;   // maior número de cartão válido
-    private const int DigitosVisiveisDoCartao = 4;   // só os 4 últimos são mostrados e guardados
+    private const int EtapaEndereco = 0;
+    private const int EtapaEntrega = 1;
+    private const int EtapaPagamento = 2;
+    private const int EtapaRevisao = 3;
+    private const int EtapaConcluido = 4;
 
-    // As etapas em ordem. O número de cada uma (0 a 4) é usado para avançar e voltar.
-    private enum Etapa { Endereco, Entrega, Pagamento, Revisao, Concluido }
+    private string[] _nomesDasEtapas = { "Endereço", "Entrega", "Pagamento", "Revisão", "Concluído" };
+    private Panel[] _paineis;
+    private int _etapa;
 
-    private static readonly string[] NomesDasEtapas = { "Endereço", "Entrega", "Pagamento", "Revisão", "Concluído" };
+    private SessaoDoUsuario _sessao;
+    private List<OpcaoEntrega> _opcoesEntrega = new List<OpcaoEntrega>();
 
-    private readonly PedidoController _pedidos;
-    private readonly SessaoDoUsuario _sessao;
-    private Etapa _etapa = Etapa.Endereco;
-    private bool _compraConcluida;   // vira true quando o pedido é gravado
+    // Para trocar a regra de desconto, basta trocar DescontoQuantidade por outra classe (ex.: SemDesconto).
+    private PedidoController _pedidos = new PedidoController(new DescontoQuantidade());
 
-    public FrmCheckout(PedidoController pedidos, SessaoDoUsuario sessao)
+    public FrmCheckout(SessaoDoUsuario sessao)
     {
-        _pedidos = pedidos;
         _sessao = sessao;
         InitializeComponent();
+        _paineis = new Panel[] { pnlEndereco, pnlEntrega, pnlPagamento, pnlRevisao, pnlConcluido };
     }
-
-    // Atalhos para não repetir caminhos longos.
-    private CarrinhoDeCompras Carrinho => _sessao.Carrinho.Carrinho;
-    private Endereco? EnderecoEscolhido => lstEnderecos.SelectedItem as Endereco;
-    private OpcaoComFrete? EntregaEscolhida => lstEntregas.SelectedItem as OpcaoComFrete;
-    private string FinalDoCartao => SomenteDigitos(txtNumeroCartao.Text)[^DigitosVisiveisDoCartao..]; // ^4.. = 4 últimos
 
     private void FrmCheckout_Load(object sender, EventArgs e)
     {
         lstEnderecos.DataSource = _pedidos.ListarEnderecos(_sessao.Cliente.Id);
 
-        // Cada opção de entrega já aparece com o frete calculado para este carrinho.
-        lstEntregas.DataSource = _pedidos.ListarOpcoesEntrega()
-            .Select(opcao => new OpcaoComFrete(opcao, _pedidos.SimularFrete(Carrinho, opcao)))
-            .ToList();
+        // Cada opção de entrega aparece com o frete já calculado para este carrinho.
+        _opcoesEntrega = _pedidos.ListarOpcoesEntrega();
+        foreach (OpcaoEntrega opcao in _opcoesEntrega)
+        {
+            decimal frete = _pedidos.CalcularFrete(_sessao.Carrinho, opcao);
+            lstEntregas.Items.Add(opcao + " - frete " + frete.ToString("C"));
+        }
 
         nudParcelas.Maximum = PagamentoCartao.MaximoDeParcelas;
-        rdoPix.Checked = true;            // Pix vem marcado
-        MostrarEtapa(Etapa.Endereco);
+        rdoPix.Checked = true;
+        MostrarEtapa(EtapaEndereco);
     }
 
-    // Ao fechar a janela depois da compra, avisa o carrinho que deu certo (ele também fecha).
-    private void FrmCheckout_FormClosing(object sender, FormClosingEventArgs e)
+    // Os campos do cartão só ficam habilitados quando "Cartão" está marcado.
+    private void FormaDePagamento_CheckedChanged(object sender, EventArgs e)
     {
-        if (_compraConcluida)
-            DialogResult = DialogResult.OK;
+        grpCartao.Enabled = rdoCartao.Checked;
     }
 
-    // Os campos do cartão só ficam habilitados com "Cartão" marcado.
-    private void FormaDePagamento_CheckedChanged(object sender, EventArgs e) => grpCartao.Enabled = rdoCartao.Checked;
+    private void BtnVoltar_Click(object sender, EventArgs e)
+    {
+        MostrarEtapa(_etapa - 1);
+    }
 
-    private void BtnVoltar_Click(object sender, EventArgs e) => MostrarEtapa(_etapa - 1); // etapa anterior
-
-    /// <summary>Botão principal: avança se a etapa atual estiver preenchida; na Revisão, confirma a compra.</summary>
     private void BtnAvancar_Click(object sender, EventArgs e)
     {
-        switch (_etapa)
+        if (_etapa == EtapaEndereco)
         {
-            case Etapa.Endereco when EnderecoEscolhido is not null:
-                MostrarEtapa(Etapa.Entrega);
-                break;
-            case Etapa.Entrega when EntregaEscolhida is not null:
-                MostrarEtapa(Etapa.Pagamento);
-                break;
-            case Etapa.Pagamento when PagamentoEhValido():
-                txtRevisao.Text = MontarRevisao();
-                MostrarEtapa(Etapa.Revisao);
-                break;
-            case Etapa.Revisao:
-                ConfirmarCompra();
-                break;
-            case Etapa.Concluido:
-                Close();
-                break;
+            if (lstEnderecos.SelectedItem == null)
+            {
+                MessageBox.Show("Escolha um endereço.");
+                return;
+            }
+            MostrarEtapa(EtapaEntrega);
+        }
+        else if (_etapa == EtapaEntrega)
+        {
+            if (lstEntregas.SelectedIndex < 0)
+            {
+                MessageBox.Show("Escolha uma opção de entrega.");
+                return;
+            }
+            MostrarEtapa(EtapaPagamento);
+        }
+        else if (_etapa == EtapaPagamento)
+        {
+            if (!CartaoEhValido())
+                return;
+            txtRevisao.Text = MontarRevisao();
+            MostrarEtapa(EtapaRevisao);
+        }
+        else if (_etapa == EtapaRevisao)
+        {
+            ConfirmarCompra();
+        }
+        else
+        {
+            Close();
         }
     }
 
-    /// <summary>Mostra só o painel da etapa e ajusta título e botões.</summary>
-    private void MostrarEtapa(Etapa etapa)
+    private void MostrarEtapa(int etapa)
     {
         _etapa = etapa;
-        pnlEndereco.Visible = etapa == Etapa.Endereco;
-        pnlEntrega.Visible = etapa == Etapa.Entrega;
-        pnlPagamento.Visible = etapa == Etapa.Pagamento;
-        pnlRevisao.Visible = etapa == Etapa.Revisao;
-        pnlConcluido.Visible = etapa == Etapa.Concluido;
 
-        lblEtapa.Text = $"Etapa {(int)etapa + 1} de {NomesDasEtapas.Length} — {NomesDasEtapas[(int)etapa]}";
-        btnVoltar.Enabled = etapa is Etapa.Entrega or Etapa.Pagamento or Etapa.Revisao; // não volta da 1ª nem depois de comprar
-        btnAvancar.Text = etapa switch
-        {
-            Etapa.Revisao => "Confirmar compra",
-            Etapa.Concluido => "Fechar",
-            _ => "Avançar",
-        };
+        for (int i = 0; i < _paineis.Length; i++)
+            _paineis[i].Visible = (i == etapa);
+
+        lblEtapa.Text = "Etapa " + (etapa + 1) + " de 5 - " + _nomesDasEtapas[etapa];
+
+        // Não dá para voltar da primeira etapa nem depois da compra concluída.
+        btnVoltar.Enabled = etapa != EtapaEndereco && etapa != EtapaConcluido;
+
+        if (etapa == EtapaRevisao)
+            btnAvancar.Text = "Confirmar compra";
+        else if (etapa == EtapaConcluido)
+            btnAvancar.Text = "Fechar";
+        else
+            btnAvancar.Text = "Avançar";
     }
 
-    /// <summary>Pix e Boleto não pedem dados; no Cartão, confere titular e número.</summary>
-    private bool PagamentoEhValido()
+    // Pix e Boleto não pedem dados. No cartão, confere o titular e o número.
+    private bool CartaoEhValido()
     {
         if (!rdoCartao.Checked)
             return true;
 
-        int digitos = SomenteDigitos(txtNumeroCartao.Text).Length;
-        if (string.IsNullOrWhiteSpace(txtTitular.Text))
-            Mensagem.Aviso(this, "Informe o nome do titular do cartão.");
-        else if (digitos is < DigitosMinimosDoCartao or > DigitosMaximosDoCartao)
-            Mensagem.Aviso(this, "Número do cartão inválido.");
-        else
-            return true;
+        if (txtTitular.Text.Trim() == "")
+        {
+            MessageBox.Show("Informe o nome do titular do cartão.");
+            return false;
+        }
 
-        return false;
+        string numero = NumeroDoCartao();
+        if (numero.Length < 13 || numero.Length > 19 || !numero.All(char.IsDigit))
+        {
+            MessageBox.Show("Número do cartão inválido.");
+            return false;
+        }
+
+        return true;
     }
 
-    /// <summary>Cria o objeto da forma escolhida (herança). O valor é preenchido pelo PedidoService.</summary>
+    // Número do cartão sem espaços e traços.
+    private string NumeroDoCartao()
+    {
+        return txtNumeroCartao.Text.Replace(" ", "").Replace("-", "");
+    }
+
+    private string UltimosDigitosDoCartao()
+    {
+        string numero = NumeroDoCartao();
+        return numero.Substring(numero.Length - 4);
+    }
+
+    private OpcaoEntrega EntregaEscolhida()
+    {
+        return _opcoesEntrega[lstEntregas.SelectedIndex];
+    }
+
+    // Cria o pagamento da forma escolhida (herança). O valor é preenchido ao finalizar.
     private Pagamento CriarPagamento()
     {
         if (rdoBoleto.Checked)
             return new PagamentoBoleto();
+
         if (rdoCartao.Checked)
-            return new PagamentoCartao
-            {
-                NomeTitular = txtTitular.Text.Trim(),
-                UltimosDigitos = FinalDoCartao,
-                Parcelas = (int)nudParcelas.Value,
-            };
+        {
+            PagamentoCartao cartao = new PagamentoCartao();
+            cartao.NomeTitular = txtTitular.Text.Trim();
+            cartao.UltimosDigitos = UltimosDigitosDoCartao();
+            cartao.Parcelas = (int)nudParcelas.Value;
+            return cartao;
+        }
 
         return new PagamentoPix();
     }
 
-    // Texto da forma de pagamento na Revisão (antes de processar, o boleto ainda não tem vencimento).
-    private string DescreverPagamentoEscolhido() =>
-        rdoCartao.Checked ? $"Cartão final {FinalDoCartao} em {nudParcelas.Value}x"
-        : rdoBoleto.Checked ? "Boleto bancário"
-        : "Pix";
-
-    /// <summary>Resumo da etapa Revisão: cliente, endereço, entrega, pagamento, itens e valores.</summary>
     private string MontarRevisao()
     {
-        OpcaoComFrete entrega = EntregaEscolhida!;            // "!": já validado no BtnAvancar
-        decimal subtotal = Carrinho.CalcularSubtotal();
-        decimal desconto = _pedidos.SimularDesconto(Carrinho);
-        var texto = new StringBuilder();                      // monta o texto linha a linha
+        decimal subtotal = _sessao.Carrinho.CalcularSubtotal();
+        decimal frete = _pedidos.CalcularFrete(_sessao.Carrinho, EntregaEscolhida());
+        decimal desconto = _pedidos.CalcularDesconto(_sessao.Carrinho);
 
-        texto.AppendLine($"Cliente: {_sessao.Cliente.Nome} — {_pedidos.DescreverDocumento(_sessao.Cliente.Id)}");
-        texto.AppendLine($"Endereço: {EnderecoEscolhido}");
-        texto.AppendLine($"Entrega: {entrega}");
-        texto.AppendLine($"Pagamento: {DescreverPagamentoEscolhido()}");
-        texto.AppendLine();
-        texto.AppendLine("Produtos:");
-        foreach (PedidoItem item in Carrinho.Itens)
-            texto.AppendLine($"  {item.Quantidade}x {item.Produto?.Nome} — {item.CalcularSubtotal():C}");
-        texto.AppendLine();
-        texto.AppendLine($"Subtotal: {subtotal:C}");
-        texto.AppendLine($"Frete:    {entrega.Frete:C}");
-        texto.AppendLine($"Desconto: {desconto:C}");
-        texto.AppendLine($"Total:    {subtotal + entrega.Frete - desconto:C}");
-        return texto.ToString();
+        string pagamento = "Pix";
+        if (rdoBoleto.Checked)
+            pagamento = "Boleto bancário";
+        else if (rdoCartao.Checked)
+            pagamento = "Cartão final " + UltimosDigitosDoCartao() + " em " + nudParcelas.Value + "x";
+
+        string texto = "";
+        texto += "Cliente: " + _sessao.Cliente.Nome + " - " + _sessao.Cliente.DescreverDocumento() + "\r\n";
+        texto += "Endereço: " + lstEnderecos.SelectedItem + "\r\n";
+        texto += "Entrega: " + EntregaEscolhida() + "\r\n";
+        texto += "Pagamento: " + pagamento + "\r\n\r\n";
+
+        texto += "Produtos:\r\n";
+        foreach (PedidoItem item in _sessao.Carrinho.Itens)
+            texto += "  " + item.Quantidade + "x " + item.Produto?.Nome + " - " + item.CalcularSubtotal().ToString("C") + "\r\n";
+
+        texto += "\r\nSubtotal: " + subtotal.ToString("C") + "\r\n";
+        texto += "Frete: " + frete.ToString("C") + "\r\n";
+        texto += "Desconto: " + desconto.ToString("C") + "\r\n";
+        texto += "Total: " + (subtotal + frete - desconto).ToString("C") + "\r\n";
+        return texto;
     }
 
-    /// <summary>Envia as escolhas para o controlador. Se der erro, mostra o motivo e fica na Revisão.</summary>
     private void ConfirmarCompra()
     {
-        var dados = new DadosCheckout(_sessao.Cliente.Id, EnderecoEscolhido!.Id, EntregaEscolhida!.Opcao.Id, CriarPagamento());
+        Endereco? endereco = lstEnderecos.SelectedItem as Endereco;
+        if (endereco == null)
+            return;
+
         try
         {
-            Pedido pedido = _pedidos.Finalizar(dados, Carrinho);
-            _compraConcluida = true;
-            txtConcluido.Text = MontarComprovante(pedido);
-            MostrarEtapa(Etapa.Concluido);
+            Pedido pedido = _pedidos.Finalizar(_sessao.Cliente.Id, endereco.Id, EntregaEscolhida(), CriarPagamento(), _sessao.Carrinho);
+
+            string texto = "Pedido nº " + pedido.Id + " realizado com sucesso!\r\n\r\n";
+            texto += "Pagamento: " + pedido.Pagamento?.Descricao + "\r\n";
+            texto += "Entrega: " + EntregaEscolhida() + "\r\n";
+            texto += "Total pago: " + pedido.CalcularTotal().ToString("C") + "\r\n";
+            txtConcluido.Text = texto;
+
+            MostrarEtapa(EtapaConcluido);
         }
         catch (EstoqueInsuficienteException ex)   // alguém comprou a peça antes
         {
-            Mensagem.Aviso(this, ex.Message);
+            MessageBox.Show(ex.Message);
         }
-        catch (InvalidOperationException ex)      // carrinho vazio, opção inexistente, parcelas inválidas
+        catch (InvalidOperationException ex)      // carrinho vazio, parcelas inválidas...
         {
-            Mensagem.Aviso(this, ex.Message);
+            MessageBox.Show(ex.Message);
         }
-    }
-
-    // Texto da etapa Concluído, com os dados já gravados (número do pedido, código do pagamento).
-    private string MontarComprovante(Pedido pedido)
-    {
-        var texto = new StringBuilder();
-        texto.AppendLine($"Pedido nº {pedido.Id} realizado com sucesso!");
-        texto.AppendLine();
-        texto.AppendLine($"Pagamento: {pedido.Pagamento?.Descricao}");
-        texto.AppendLine($"Entrega: {EntregaEscolhida}");
-        if (pedido.ValorDesconto > 0)
-            texto.AppendLine($"Desconto: {pedido.ValorDesconto:C}");
-        texto.AppendLine($"Total pago: {pedido.CalcularTotal():C}");
-        return texto.ToString();
-    }
-
-    private static string SomenteDigitos(string texto) => string.Concat(texto.Where(char.IsDigit)); // tira espaços e traços
-
-    /// <summary>Item da lista de Entrega: a opção junto com o frete já simulado para este carrinho.</summary>
-    private sealed record OpcaoComFrete(OpcaoEntrega Opcao, decimal Frete)
-    {
-        public override string ToString() => $"{Opcao} — frete {Frete:C}";
     }
 }

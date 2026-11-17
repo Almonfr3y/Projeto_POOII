@@ -4,35 +4,35 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LojaVirtual.Data;
 
-/// <summary>
-/// Code First: o banco loja_pecas é gerado a partir das classes do Model e da configuração abaixo (Fluent API).
-/// Depois de mudar algo aqui, gere uma nova migration (Add-Migration) e aplique (Update-Database).
-/// </summary>
+// Code First: o banco loja_pecas é criado a partir das classes do Model e da configuração abaixo.
+// Se mudar alguma classe, gere uma nova migration (Add-Migration) e rode Update-Database.
 public class LojaDbContext : DbContext
 {
-    // O construtor só repassa as opções (string de conexão, MySQL) para a classe base do EF.
-    public LojaDbContext(DbContextOptions<LojaDbContext> options) : base(options)
+    // Troque aqui se o MySQL de vocês tiver outra senha ou outra porta.
+    public const string StringDeConexao = "server=localhost;port=3306;database=loja_pecas;user=root;password=;";
+
+    public DbSet<Pessoa> Pessoas { get; set; }
+    public DbSet<Endereco> Enderecos { get; set; }
+    public DbSet<Categoria> Categorias { get; set; }
+    public DbSet<Produto> Produtos { get; set; }
+    public DbSet<OpcaoEntrega> OpcoesEntrega { get; set; }
+    public DbSet<Pedido> Pedidos { get; set; }
+    public DbSet<PedidoItem> PedidoItens { get; set; }
+    public DbSet<Pagamento> Pagamentos { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
+        optionsBuilder.UseMySql(StringDeConexao, new MySqlServerVersion(new Version(8, 0, 36)));
     }
 
-    // Cada DbSet é uma tabela que o código consulta com LINQ.
-    public DbSet<Pessoa> Pessoas => Set<Pessoa>();               // clientes PF e PJ (mesma tabela)
-    public DbSet<Endereco> Enderecos => Set<Endereco>();
-    public DbSet<Categoria> Categorias => Set<Categoria>();
-    public DbSet<Produto> Produtos => Set<Produto>();
-    public DbSet<OpcaoEntrega> OpcoesEntrega => Set<OpcaoEntrega>();
-    public DbSet<Pedido> Pedidos => Set<Pedido>();
-    public DbSet<PedidoItem> PedidoItens => Set<PedidoItem>();
-    public DbSet<Pagamento> Pagamentos => Set<Pagamento>();       // Pix, Boleto e Cartão (mesma tabela)
-
-    /// <summary>Fluent API: nomes das tabelas, tamanhos, relacionamentos e heranças.</summary>
+    // Fluent API: nomes das tabelas, tamanhos dos campos, relacionamentos e heranças.
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ConfigurarClientes(modelBuilder);
         ConfigurarCatalogo(modelBuilder);
         ConfigurarPedidos(modelBuilder);
         ConfigurarPagamentos(modelBuilder);
-        CargaInicial.Aplicar(modelBuilder); // dados de demonstração (seed)
+        CargaInicial.Aplicar(modelBuilder);   // dados iniciais (produtos, clientes...)
     }
 
     private static void ConfigurarClientes(ModelBuilder modelBuilder)
@@ -41,7 +41,7 @@ public class LojaDbContext : DbContext
         {
             pessoa.ToTable("tb_pessoa");
 
-            // HERANÇA em TPH: PF e PJ ficam na mesma tabela; a coluna TipoPessoa diz qual é qual.
+            // Herança (TPH): PF e PJ ficam na mesma tabela; a coluna TipoPessoa diz qual é qual.
             pessoa.HasDiscriminator<string>("TipoPessoa")
                 .HasValue<PessoaFisica>("PF")
                 .HasValue<PessoaJuridica>("PJ");
@@ -51,11 +51,11 @@ public class LojaDbContext : DbContext
             pessoa.Property(p => p.Senha).IsRequired().HasMaxLength(50);
             pessoa.HasIndex(p => p.Email).IsUnique(); // não pode haver dois clientes com o mesmo e-mail
 
-            // COMPOSIÇÃO 1×N: apagar o cliente apaga os endereços dele (Cascade).
+            // Composição 1xN: apagar o cliente apaga os endereços dele (Cascade).
             pessoa.HasMany(p => p.Enderecos).WithOne(e => e.Cliente)
                 .HasForeignKey(e => e.ClienteId).OnDelete(DeleteBehavior.Cascade);
 
-            // N×N sem classe de associação: o EF cria sozinho a tabela de junção tb_favorito.
+            // NxN sem classe de associação: o EF cria sozinho a tabela de junção tb_favorito.
             pessoa.HasMany(p => p.Favoritos).WithMany(p => p.FavoritadoPor)
                 .UsingEntity<Dictionary<string, object>>(
                     "tb_favorito",
@@ -105,7 +105,7 @@ public class LojaDbContext : DbContext
             produto.Property(p => p.Preco).HasPrecision(10, 2);  // até 99.999.999,99
             produto.Property(p => p.PesoKg).HasPrecision(8, 3);  // gramas de precisão
 
-            // AGREGAÇÃO 1×N: o produto existe sem a categoria, então apagar a categoria é bloqueado (Restrict).
+            // Agregação 1xN: o produto existe sem a categoria, então apagar a categoria é bloqueado (Restrict).
             produto.HasOne(p => p.Categoria).WithMany(c => c.Produtos)
                 .HasForeignKey(p => p.CategoriaId).OnDelete(DeleteBehavior.Restrict);
         });
@@ -130,26 +130,26 @@ public class LojaDbContext : DbContext
             pedido.Property(p => p.ValorFrete).HasPrecision(10, 2);
             pedido.Property(p => p.ValorDesconto).HasPrecision(10, 2);
 
-            // 1×N: um cliente faz vários pedidos.
+            // 1xN: um cliente faz vários pedidos.
             pedido.HasOne(p => p.Cliente).WithMany(c => c.Pedidos)
                 .HasForeignKey(p => p.ClienteId).OnDelete(DeleteBehavior.Restrict);
 
-            // N×1: endereço e opção de entrega escolhidos no checkout.
+            // Nx1: endereço e opção de entrega escolhidos no checkout.
             pedido.HasOne(p => p.EnderecoEntrega).WithMany()
                 .HasForeignKey(p => p.EnderecoEntregaId).OnDelete(DeleteBehavior.Restrict);
             pedido.HasOne(p => p.OpcaoEntrega).WithMany()
                 .HasForeignKey(p => p.OpcaoEntregaId).OnDelete(DeleteBehavior.Restrict);
 
-            // COMPOSIÇÃO 1×N: o item não existe sem o pedido (Cascade).
+            // Composição 1xN: o item não existe sem o pedido (Cascade).
             pedido.HasMany(p => p.Itens).WithOne(i => i.Pedido)
                 .HasForeignKey(i => i.PedidoId).OnDelete(DeleteBehavior.Cascade);
 
-            // 1×1: cada pedido tem um pagamento; a chave estrangeira fica em tb_pagamento.
+            // 1x1: cada pedido tem um pagamento; a chave estrangeira fica em tb_pagamento.
             pedido.HasOne(p => p.Pagamento).WithOne(g => g.Pedido)
                 .HasForeignKey<Pagamento>(g => g.PedidoId);
         });
 
-        // N×N Pedido—Produto pela classe de associação PedidoItem (chave composta).
+        // NxN Pedido—Produto pela classe de associação PedidoItem (chave composta).
         modelBuilder.Entity<PedidoItem>(item =>
         {
             item.ToTable("tb_pedido_item");
@@ -168,7 +168,7 @@ public class LojaDbContext : DbContext
             pagamento.Ignore(g => g.Descricao); // texto calculado, não vira coluna
             pagamento.Property(g => g.Valor).HasPrecision(10, 2);
 
-            // HERANÇA em TPH: a coluna Forma diz se a linha é Pix, Boleto ou Cartão.
+            // Herança (TPH): a coluna Forma diz se a linha é Pix, Boleto ou Cartão.
             pagamento.HasDiscriminator<string>("Forma")
                 .HasValue<PagamentoPix>("Pix")
                 .HasValue<PagamentoBoleto>("Boleto")

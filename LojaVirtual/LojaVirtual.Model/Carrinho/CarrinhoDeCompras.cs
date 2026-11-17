@@ -3,56 +3,95 @@ using LojaVirtual.Model.Excecoes;
 
 namespace LojaVirtual.Model.Carrinho;
 
-/// <summary>Carrinho em memória: uma coleção de PedidoItem. Não é gravado no banco.</summary>
+// Carrinho de compras. Fica só na memória (não é gravado no banco).
 public class CarrinhoDeCompras
 {
-    private readonly List<PedidoItem> _itens = new();
+    public List<PedidoItem> Itens { get; private set; } = new List<PedidoItem>();
 
-    // Fora da classe a lista é só leitura: os itens só mudam pelos métodos abaixo (encapsulamento).
-    public IReadOnlyList<PedidoItem> Itens => _itens;
-
-    public bool EstaVazio => _itens.Count == 0;
-
-    /// <summary>Adiciona o produto ou, se ele já está no carrinho, soma a quantidade.</summary>
     public void Adicionar(Produto produto, int quantidade)
     {
-        PedidoItem? existente = BuscarItem(produto.Id);
-        int quantidadeFinal = (existente?.Quantidade ?? 0) + quantidade;
-        GarantirEstoqueDisponivel(produto, quantidadeFinal);
+        PedidoItem? item = BuscarItem(produto.Id);
 
-        if (existente is null)
-            _itens.Add(new PedidoItem { Produto = produto, ProdutoId = produto.Id, Quantidade = quantidade, PrecoUnitario = produto.Preco });
+        if (item == null)
+        {
+            if (quantidade > produto.Estoque)
+                throw new EstoqueInsuficienteException(produto, quantidade);
+
+            item = new PedidoItem();
+            item.Produto = produto;
+            item.ProdutoId = produto.Id;
+            item.Quantidade = quantidade;
+            item.PrecoUnitario = produto.Preco;
+            Itens.Add(item);
+        }
         else
-            existente.Quantidade = quantidadeFinal;
+        {
+            // O produto já está no carrinho: só soma a quantidade.
+            int novaQuantidade = item.Quantidade + quantidade;
+            if (novaQuantidade > produto.Estoque)
+                throw new EstoqueInsuficienteException(produto, novaQuantidade);
+
+            item.Quantidade = novaQuantidade;
+        }
     }
 
-    /// <summary>Muda a quantidade; zero ou menos remove o item.</summary>
     public void AlterarQuantidade(int produtoId, int novaQuantidade)
     {
-        PedidoItem item = BuscarItem(produtoId) ?? throw new InvalidOperationException("Produto não está no carrinho.");
+        PedidoItem? item = BuscarItem(produtoId);
+        if (item == null || item.Produto == null)
+            return;
 
         if (novaQuantidade <= 0)
         {
-            _itens.Remove(item);
+            Itens.Remove(item);   // quantidade zero remove o item
             return;
         }
 
-        GarantirEstoqueDisponivel(item.Produto!, novaQuantidade);
+        if (novaQuantidade > item.Produto.Estoque)
+            throw new EstoqueInsuficienteException(item.Produto, novaQuantidade);
+
         item.Quantidade = novaQuantidade;
     }
 
-    public void Remover(int produtoId) => _itens.RemoveAll(item => item.ProdutoId == produtoId);
-
-    public void Limpar() => _itens.Clear();
-
-    public decimal CalcularSubtotal() => _itens.Sum(item => item.CalcularSubtotal());
-
-    private PedidoItem? BuscarItem(int produtoId) => _itens.Find(item => item.ProdutoId == produtoId);
-
-    // Não deixa o carrinho pedir mais peças do que o estoque tem.
-    private static void GarantirEstoqueDisponivel(Produto produto, int quantidade)
+    public void Remover(int produtoId)
     {
-        if (quantidade > produto.Estoque)
-            throw new EstoqueInsuficienteException(produto, quantidade);
+        PedidoItem? item = BuscarItem(produtoId);
+        if (item != null)
+            Itens.Remove(item);
+    }
+
+    public void Limpar()
+    {
+        Itens.Clear();
+    }
+
+    public decimal CalcularSubtotal()
+    {
+        decimal subtotal = 0;
+        foreach (PedidoItem item in Itens)
+            subtotal += item.CalcularSubtotal();
+        return subtotal;
+    }
+
+    // Peso de todas as peças, usado para calcular o frete.
+    public decimal CalcularPesoTotal()
+    {
+        decimal peso = 0;
+        foreach (PedidoItem item in Itens)
+        {
+            if (item.Produto != null)
+                peso += item.Produto.PesoKg * item.Quantidade;
+        }
+        return peso;
+    }
+
+    private PedidoItem? BuscarItem(int produtoId)
+    {
+        foreach (PedidoItem item in Itens)
+        {
+            if (item.ProdutoId == produtoId)
+                return item;
+        }
+        return null;
     }
 }

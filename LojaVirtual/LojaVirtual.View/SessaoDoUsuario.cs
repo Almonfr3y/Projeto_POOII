@@ -1,19 +1,17 @@
-using LojaVirtual.Controller;
+using LojaVirtual.Model.Carrinho;
 using LojaVirtual.Model.Entidades;
 
 namespace LojaVirtual.View;
 
-/// <summary>O que as telas compartilham enquanto o programa está aberto: o cliente logado e o carrinho.</summary>
+// Dados que todas as telas usam enquanto o programa está aberto: o cliente logado e o carrinho.
 public class SessaoDoUsuario
 {
-    private Pessoa? _cliente; // null até o login dar certo
+    public Pessoa Cliente { get; private set; }
+    public CarrinhoDeCompras Carrinho { get; private set; }
 
-    public SessaoDoUsuario(CarrinhoController carrinho) => Carrinho = carrinho;
-
-    public CarrinhoController Carrinho { get; }
-
-    // As telas só abrem depois do login, então aqui o cliente sempre existe.
-    public Pessoa Cliente => _cliente ?? throw new InvalidOperationException("Nenhum cliente logado.");
-
-    public void Entrar(Pessoa cliente) => _cliente = cliente;
+    public SessaoDoUsuario(Pessoa cliente)
+    {
+        Cliente = cliente;
+        Carrinho = new CarrinhoDeCompras();
+    }
 }
