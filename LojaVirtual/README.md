@@ -17,7 +17,7 @@ inicial), área do operador e relatórios. Senhas em texto simples. O cliente po
 
 | Projeto | Camada | Conteúdo |
 |---|---|---|
-| `LojaVirtual.View` | View | Windows Forms: `FrmLogin`, `FrmInicial`, `FrmFavoritos`, `FrmCarrinho`, `FrmCheckout`, `FrmMeusPedidos` + `SessaoDoUsuario` (cliente logado e carrinho) |
+| `LojaVirtual.View` | View | WPF: `App.xaml` (abre o login e depois a Tela Inicial) e as janelas `FrmLogin`, `FrmInicial`, `FrmFavoritos`, `FrmCarrinho`, `FrmCheckout`, `FrmMeusPedidos` + `SessaoDoUsuario` (cliente logado e carrinho) |
 | `LojaVirtual.Controller` | Controller | Um controlador por tela: `ContaController`, `CatalogoController`, `FavoritosController`, `PedidoController`, `MeusPedidosController` |
 | `LojaVirtual.Model` | Model | Entidades, heranças (`Pessoa` → PF/PJ, `Pagamento` → Pix/Boleto/Cartão), `CarrinhoDeCompras`, descontos (`IDescontoStrategy`), `EstoqueInsuficienteException` |
 | `LojaVirtual.Data` | Dados | `LojaDbContext` (Code First + Fluent API), `CargaInicial` (seed), Migrations e `MeusPedidosDAO` (SQL puro / ADO.NET) |
@@ -39,6 +39,10 @@ Cada método de controlador abre um `LojaDbContext` com `using`, faz o que preci
 | Clean Code | Seção 9 do plano |
 
 ## Como rodar no Visual Studio
+
+**Requisitos:** Visual Studio 2026 (versão 18 ou mais nova) com a carga "Desenvolvimento para desktop com .NET" (inclui o WPF)
+(instala o SDK do **.NET 10**) e MySQL Server 8. Pacotes NuGet (restaurados sozinhos ao compilar): EF Core 10
+(`Microsoft.EntityFrameworkCore.Design` e `.Tools`) e o provedor oficial da Oracle `MySql.EntityFrameworkCore` 10.
 
 1. Abra `LojaVirtual.sln` e defina `LojaVirtual.View` como projeto de inicialização.
 2. A conexão fica em `LojaDbContext.StringDeConexao`:
@@ -65,4 +69,4 @@ Para demonstrar o OCP: em `FrmCheckout`, troque `new DescontoQuantidade()` por `
 
 O comparativo com a versão escrita sem IA está em [`../Comparativo_IA/`](../Comparativo_IA/).
 
-As telas WinForms só rodam no Windows: **abram cada uma no Visual Studio para revisar o layout** antes de gravar o vídeo.
+As telas WPF só rodam no Windows: **abram cada uma no Visual Studio para revisar o layout** antes de gravar o vídeo.

@@ -1,3 +1,5 @@
+using System.Windows;                 // classes do WPF (Window, MessageBox...)
+using System.Windows.Controls;        // controles do WPF (SelectionChangedEventArgs)
 using LojaVirtual.Controller;         // para usar os controladores
 using LojaVirtual.Model.Entidades;    // para usar Categoria e Produto
 using LojaVirtual.Model.Excecoes;     // para usar EstoqueInsuficienteException
@@ -5,21 +7,22 @@ using LojaVirtual.Model.Excecoes;     // para usar EstoqueInsuficienteException
 namespace LojaVirtual.View;
 
 // Tela Inicial: busca, categorias, lista de peças e botões Carrinho, Favoritos e Meus Pedidos.
-public partial class FrmInicial : Form
+public partial class FrmInicial : Window
 {
     private SessaoDoUsuario _sessao;                                    // cliente logado e carrinho
     private CatalogoController _catalogo = new CatalogoController();    // busca categorias e produtos
     private FavoritosController _favoritos = new FavoritosController(); // para o botão Favoritar
+    private List<Produto> _produtos = new List<Produto>();              // produtos na mesma ordem da grade
 
     // Construtor: recebe a sessão criada depois do login.
     public FrmInicial(SessaoDoUsuario sessao)
     {
         _sessao = sessao;
-        InitializeComponent();   // cria os controles desenhados no Designer
+        InitializeComponent();   // cria os controles desenhados no XAML
     }
 
     // Executa quando a tela abre.
-    private void FrmInicial_Load(object sender, EventArgs e)
+    private void FrmInicial_Loaded(object sender, RoutedEventArgs e)
     {
         lblCliente.Text = "Olá, " + _sessao.Cliente.Nome;   // saudação com o nome do cliente
 
@@ -31,19 +34,19 @@ public partial class FrmInicial : Form
     }
 
     // Clique em "Buscar".
-    private void BtnBuscar_Click(object sender, EventArgs e)
+    private void BtnBuscar_Click(object sender, RoutedEventArgs e)
     {
         AtualizarLista();
     }
 
     // Trocou a categoria no ComboBox.
-    private void CmbCategoria_SelectedIndexChanged(object sender, EventArgs e)
+    private void CmbCategoria_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         AtualizarLista();
     }
 
     // Clique em "Adicionar ao carrinho".
-    private void BtnAdicionar_Click(object sender, EventArgs e)
+    private void BtnAdicionar_Click(object sender, RoutedEventArgs e)
     {
         Produto? produto = ProdutoSelecionado();   // produto da linha selecionada
         if (produto == null)                       // nenhuma linha selecionada
@@ -61,7 +64,7 @@ public partial class FrmInicial : Form
     }
 
     // Clique em "Favoritar".
-    private void BtnFavoritar_Click(object sender, EventArgs e)
+    private void BtnFavoritar_Click(object sender, RoutedEventArgs e)
     {
         Produto? produto = ProdutoSelecionado();
         if (produto == null)
@@ -72,24 +75,27 @@ public partial class FrmInicial : Form
     }
 
     // Clique em "Carrinho": abre a tela do carrinho.
-    private void BtnCarrinho_Click(object sender, EventArgs e)
+    private void BtnCarrinho_Click(object sender, RoutedEventArgs e)
     {
         FrmCarrinho tela = new FrmCarrinho(_sessao);   // passa a mesma sessão
+        tela.Owner = this;                             // abre centralizada sobre esta tela
         tela.ShowDialog();                             // ShowDialog: espera a tela fechar
         AtualizarLista();   // o estoque pode ter mudado depois de uma compra
     }
 
     // Clique em "Favoritos": abre a tela de favoritos.
-    private void BtnFavoritos_Click(object sender, EventArgs e)
+    private void BtnFavoritos_Click(object sender, RoutedEventArgs e)
     {
         FrmFavoritos tela = new FrmFavoritos(_sessao);
+        tela.Owner = this;
         tela.ShowDialog();
     }
 
     // Clique em "Meus Pedidos": abre a tela de pedidos.
-    private void BtnMeusPedidos_Click(object sender, EventArgs e)
+    private void BtnMeusPedidos_Click(object sender, RoutedEventArgs e)
     {
         FrmMeusPedidos tela = new FrmMeusPedidos(_sessao);
+        tela.Owner = this;
         tela.ShowDialog();
     }
 
@@ -102,29 +108,28 @@ public partial class FrmInicial : Form
         if (categoria != null)
             categoriaId = categoria.Id;
 
-        List<Produto> produtos = _catalogo.ListarProdutos(categoriaId, txtBusca.Text);   // pede ao controlador
+        _produtos = _catalogo.ListarProdutos(categoriaId, txtBusca.Text);   // pede ao controlador
 
-        // A grade mostra só algumas colunas. O Id fica escondido e é usado nos botões.
+        // A grade mostra só algumas colunas.
         // Select cria um objeto anônimo por produto; o nome de cada campo vira o título da coluna.
-        dgvProdutos.DataSource = produtos.Select(p => new
+        dgProdutos.ItemsSource = _produtos.Select(p => new
         {
-            p.Id,
             Peça = p.Nome,
             Categoria = p.Categoria == null ? "" : p.Categoria.Nome,   // "?:" = if/else numa linha
             Especificações = p.Especificacoes,
             Preço = p.Preco.ToString("C"),   // "C" = formato de moeda (R$)
             p.Estoque
         }).ToList();
-        dgvProdutos.Columns["Id"].Visible = false;   // esconde a coluna Id
     }
 
     // Busca no banco o produto da linha selecionada na grade.
     private Produto? ProdutoSelecionado()
     {
-        if (dgvProdutos.CurrentRow == null)   // nenhuma linha selecionada
+        if (dgProdutos.SelectedIndex < 0)   // -1 = nenhuma linha selecionada
             return null;
 
-        int produtoId = (int)dgvProdutos.CurrentRow.Cells["Id"].Value;   // lê o Id escondido da linha
-        return _catalogo.BuscarProduto(produtoId);                       // busca o produto atualizado
+        // A linha da grade está na mesma posição da lista _produtos.
+        int produtoId = _produtos[dgProdutos.SelectedIndex].Id;
+        return _catalogo.BuscarProduto(produtoId);   // busca o produto atualizado (estoque do banco)
     }
 }

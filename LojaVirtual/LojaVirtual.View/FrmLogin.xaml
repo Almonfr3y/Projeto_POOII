@@ -1,0 +1,22 @@
+<!-- Tela de login: e-mail, senha e o botão Entrar. -->
+<Window x:Class="LojaVirtual.View.FrmLogin"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Log In" Width="360" SizeToContent="Height"
+        ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
+    <!-- StackPanel: empilha os controles um embaixo do outro. -->
+    <StackPanel Margin="24">
+        <TextBlock Text="Entre na sua Conta" FontSize="16" FontWeight="Bold" Margin="0,0,0,16" />
+
+        <TextBlock Text="E-mail" />
+        <TextBox x:Name="txtEmail" Margin="0,2,0,10" />
+
+        <TextBlock Text="Senha" />
+        <!-- PasswordBox: caixa de senha (mostra bolinhas no lugar das letras). -->
+        <PasswordBox x:Name="txtSenha" Padding="3" Margin="0,2,0,16" />
+
+        <!-- IsDefault: a tecla Enter clica neste botão. -->
+        <Button x:Name="btnEntrar" Content="Entrar" IsDefault="True" Margin="0" Height="32"
+                Click="BtnEntrar_Click" />
+    </StackPanel>
+</Window>

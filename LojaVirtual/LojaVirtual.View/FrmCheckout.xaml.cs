@@ -1,3 +1,4 @@
+using System.Windows;                            // classes do WPF (Window, MessageBox, Visibility...)
 using LojaVirtual.Controller;                    // para usar PedidoController
 using LojaVirtual.Model.Descontos;               // para usar DescontoQuantidade
 using LojaVirtual.Model.Entidades;               // para usar Endereco, OpcaoEntrega, Pedido...
@@ -7,8 +8,8 @@ using LojaVirtual.Model.Excecoes;                // para usar EstoqueInsuficient
 namespace LojaVirtual.View;
 
 // Checkout em etapas: Endereço -> Entrega -> Pagamento -> Revisão -> Concluído.
-// Cada etapa é um painel, e só o painel da etapa atual fica visível.
-public partial class FrmCheckout : Form
+// Cada etapa é um painel (desenhado no FrmCheckout.xaml), e só o painel da etapa atual fica visível.
+public partial class FrmCheckout : Window
 {
     // Número de cada etapa (constantes em vez de números soltos no código).
     private const int EtapaEndereco = 0;
@@ -18,7 +19,7 @@ public partial class FrmCheckout : Form
     private const int EtapaConcluido = 4;
 
     private string[] _nomesDasEtapas = { "Endereço", "Entrega", "Pagamento", "Revisão", "Concluído" };   // títulos
-    private Panel[] _paineis;   // vetor com os 5 painéis, na ordem das etapas
+    private UIElement[] _paineis;   // vetor com os 5 painéis, na ordem das etapas (UIElement = qualquer controle do WPF)
     private int _etapa;         // etapa atual (0 a 4)
 
     private SessaoDoUsuario _sessao;                                     // cliente e carrinho
@@ -30,14 +31,14 @@ public partial class FrmCheckout : Form
     public FrmCheckout(SessaoDoUsuario sessao)
     {
         _sessao = sessao;
-        InitializeComponent();   // cria os painéis e controles do Designer
-        _paineis = new Panel[] { pnlEndereco, pnlEntrega, pnlPagamento, pnlRevisao, pnlConcluido };   // depois de criados
+        InitializeComponent();   // cria os painéis e controles do XAML
+        _paineis = new UIElement[] { pnlEndereco, pnlEntrega, pnlPagamento, txtRevisao, txtConcluido };   // depois de criados
     }
 
     // Executa quando a tela abre: carrega endereços e opções de entrega.
-    private void FrmCheckout_Load(object sender, EventArgs e)
+    private void FrmCheckout_Loaded(object sender, RoutedEventArgs e)
     {
-        lstEnderecos.DataSource = _pedidos.ListarEnderecos(_sessao.Cliente.Id);   // a lista mostra o ToString() de cada Endereco
+        lstEnderecos.ItemsSource = _pedidos.ListarEnderecos(_sessao.Cliente.Id);   // a lista mostra o ToString() de cada Endereco
 
         // Cada opção de entrega aparece com o frete já calculado para este carrinho.
         _opcoesEntrega = _pedidos.ListarOpcoesEntrega();
@@ -47,25 +48,29 @@ public partial class FrmCheckout : Form
             lstEntregas.Items.Add(opcao + " - frete " + frete.ToString("C"));   // ex.: "Padrão (5 dias úteis) - frete R$ 20,70"
         }
 
-        nudParcelas.Maximum = PagamentoCartao.MaximoDeParcelas;   // limite de parcelas vem da classe do cartão
-        rdoPix.Checked = true;            // Pix vem marcado
+        // Parcelas de 1 até o máximo (o limite vem da classe do cartão).
+        for (int parcela = 1; parcela <= PagamentoCartao.MaximoDeParcelas; parcela++)
+            cmbParcelas.Items.Add(parcela);
+        cmbParcelas.SelectedIndex = 0;   // começa em 1x
+
+        rdoPix.IsChecked = true;          // Pix vem marcado
         MostrarEtapa(EtapaEndereco);      // começa na primeira etapa
     }
 
     // Os campos do cartão só ficam habilitados quando "Cartão" está marcado.
-    private void FormaDePagamento_CheckedChanged(object sender, EventArgs e)
+    private void FormaDePagamento_Checked(object sender, RoutedEventArgs e)
     {
-        grpCartao.Enabled = rdoCartao.Checked;
+        grpCartao.IsEnabled = rdoCartao.IsChecked == true;   // IsChecked é bool? (pode ser null): compara com true
     }
 
     // Clique em "Voltar": vai para a etapa anterior.
-    private void BtnVoltar_Click(object sender, EventArgs e)
+    private void BtnVoltar_Click(object sender, RoutedEventArgs e)
     {
         MostrarEtapa(_etapa - 1);
     }
 
     // Clique em "Avançar" (ou "Confirmar compra" / "Fechar", conforme a etapa).
-    private void BtnAvancar_Click(object sender, EventArgs e)
+    private void BtnAvancar_Click(object sender, RoutedEventArgs e)
     {
         if (_etapa == EtapaEndereco)
         {
@@ -108,26 +113,29 @@ public partial class FrmCheckout : Form
         _etapa = etapa;   // guarda a etapa atual
 
         for (int i = 0; i < _paineis.Length; i++)
-            _paineis[i].Visible = (i == etapa);   // só o painel da etapa fica visível
+            if (i == etapa)
+                _paineis[i].Visibility = Visibility.Visible;     // só o painel da etapa aparece
+            else
+                _paineis[i].Visibility = Visibility.Collapsed;   // Collapsed = escondido
 
         lblEtapa.Text = "Etapa " + (etapa + 1) + " de 5 - " + _nomesDasEtapas[etapa];   // ex.: "Etapa 2 de 5 - Entrega"
 
         // Não dá para voltar da primeira etapa nem depois da compra concluída.
-        btnVoltar.Enabled = etapa != EtapaEndereco && etapa != EtapaConcluido;
+        btnVoltar.IsEnabled = etapa != EtapaEndereco && etapa != EtapaConcluido;
 
         // O texto do botão principal muda conforme a etapa.
         if (etapa == EtapaRevisao)
-            btnAvancar.Text = "Confirmar compra";
+            btnAvancar.Content = "Confirmar compra";
         else if (etapa == EtapaConcluido)
-            btnAvancar.Text = "Fechar";
+            btnAvancar.Content = "Fechar";
         else
-            btnAvancar.Text = "Avançar";
+            btnAvancar.Content = "Avançar";
     }
 
     // Pix e Boleto não pedem dados. No cartão, confere o titular e o número.
     private bool CartaoEhValido()
     {
-        if (!rdoCartao.Checked)   // não é cartão: nada para conferir
+        if (rdoCartao.IsChecked != true)   // não é cartão: nada para conferir
             return true;
 
         if (txtTitular.Text.Trim() == "")   // titular em branco
@@ -170,15 +178,15 @@ public partial class FrmCheckout : Form
     // O retorno é do tipo Pagamento, mas o objeto é Pix, Boleto ou Cartão.
     private Pagamento CriarPagamento()
     {
-        if (rdoBoleto.Checked)
+        if (rdoBoleto.IsChecked == true)
             return new PagamentoBoleto();
 
-        if (rdoCartao.Checked)
+        if (rdoCartao.IsChecked == true)
         {
             PagamentoCartao cartao = new PagamentoCartao();
             cartao.NomeTitular = txtTitular.Text.Trim();
             cartao.UltimosDigitos = UltimosDigitosDoCartao();
-            cartao.Parcelas = (int)nudParcelas.Value;   // NumericUpDown devolve decimal: converte para int
+            cartao.Parcelas = cmbParcelas.SelectedIndex + 1;   // posição 0 = 1x, posição 1 = 2x...
             return cartao;
         }
 
@@ -194,10 +202,10 @@ public partial class FrmCheckout : Form
 
         // Descrição do pagamento escolhido.
         string pagamento = "Pix";
-        if (rdoBoleto.Checked)
+        if (rdoBoleto.IsChecked == true)
             pagamento = "Boleto bancário";
-        else if (rdoCartao.Checked)
-            pagamento = "Cartão final " + UltimosDigitosDoCartao() + " em " + nudParcelas.Value + "x";
+        else if (rdoCartao.IsChecked == true)
+            pagamento = "Cartão final " + UltimosDigitosDoCartao() + " em " + (cmbParcelas.SelectedIndex + 1) + "x";
 
         // Monta o texto linha por linha ("\r\n" = quebra de linha no Windows).
         string texto = "";

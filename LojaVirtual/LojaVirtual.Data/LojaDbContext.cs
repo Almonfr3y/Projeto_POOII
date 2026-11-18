@@ -22,10 +22,10 @@ public class LojaDbContext : DbContext
     public DbSet<PedidoItem> PedidoItens { get; set; }   // tb_pedido_item
     public DbSet<Pagamento> Pagamentos { get; set; }     // tb_pagamento (Pix, Boleto e Cartão juntos)
 
-    // Diz ao EF qual banco usar: MySQL (provedor Pomelo), na versão 8.0.
+    // Diz ao EF qual banco usar: MySQL (provedor oficial da Oracle, MySql.EntityFrameworkCore).
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.UseMySql(StringDeConexao, new MySqlServerVersion(new Version(8, 0, 36)));
+        optionsBuilder.UseMySQL(StringDeConexao);
     }
 
     // Fluent API: nomes das tabelas, tamanhos dos campos, relacionamentos e heranças.

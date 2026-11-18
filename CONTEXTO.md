@@ -1,7 +1,7 @@
 # Contexto do projeto — histórico das sessões com IA
 
 Registro do que foi feito com o Claude Code (Anthropic) neste projeto, para o grupo se situar e para servir de
-base à Seção 10 do plano (uso de IA). Última atualização: **17/11/2026** (véspera da entrega).
+base à Seção 10 do plano (uso de IA). Última atualização: **18/11/2026** (dia da entrega).
 
 ## O projeto em uma página
 
@@ -11,8 +11,9 @@ base à Seção 10 do plano (uso de IA). Última atualização: **17/11/2026** (
 - **Tema:** Loja Virtual de peças de computador, do ponto de vista do **cliente fazendo uma compra**:
   Login → Catálogo (busca/categorias) → Favoritos / Carrinho → Checkout (Endereço → Entrega → Pagamento →
   Revisão → Concluído) → Meus Pedidos.
-- **Stack:** C# .NET 8, Windows Forms, MVC em 4 projetos (View, Controller, Model, Data), EF Core 8 Code First
-  com MySQL (Pomelo), e a tela Meus Pedidos em **SQL puro** (ADO.NET, `MeusPedidosDAO`).
+- **Stack:** C# .NET 10, **WPF** (XAML), MVC em 4 projetos (View, Controller, Model, Data), EF Core 10 Code First
+  com MySQL (provedor oficial da Oracle, `MySql.EntityFrameworkCore`), e a tela Meus Pedidos em **SQL puro**
+  (ADO.NET com `MySql.Data`, `MeusPedidosDAO`). Até 17/11 era .NET 8 com o provedor Pomelo e telas em Windows Forms.
 - **Fora do escopo:** cadastro de produtos/clientes/endereços (tudo vem da carga inicial), área do operador,
   relatórios, segurança de senha (texto simples), pagamento e frete reais (simulados).
 - **Logins de teste:** `ana@teste.com` (pessoa física) e `empresa@teste.com` (pessoa jurídica), senha `123456`.
@@ -32,6 +33,7 @@ base à Seção 10 do plano (uso de IA). Última atualização: **17/11/2026** (
 | 11/11 | Diagramas e plano corrigidos; escopo simplificado para o fluxo de compra do cliente; heranças `Pessoa → PF/PJ` e `Pagamento → Pix/Boleto/Cartão` (TPH) trazidas de volta; solution criada; repositório publicado. |
 | 12/11 | Telas Favoritos, Carrinho, Checkout (assistente em 5 etapas) e Meus Pedidos; migration `CriacaoInicial`; teste contra MySQL 8. |
 | 17/11 | (1) Commit/push das telas e da migration. (2) Regra de IA liberada. (3) `PedidoService.FinalizarPedido` implementado; comparativo com e sem IA; ajustes de estoque; plano e READMEs atualizados; revisão dos diagramas. (4) Código simplificado e comentado. (5) Este arquivo. (6) **Segunda simplificação, para o nível de um aluno de 3º período** (detalhes abaixo). (7) Commit `9591fd4` enviado ao GitHub; avaliação do nível do trabalho para um aluno sozinho (seção abaixo). (8) Plano ajustado para **trabalho individual**; criado o **material de estudo e roteiro do vídeo** em `Estudo/` (fora do Git). (9) **Comentários linha a linha** em todo o código; **102 perguntas e respostas** do professor em `Estudo/`. |
+| 18/11 | **Migração para o .NET 10** e **conversão das telas de Windows Forms para WPF** (detalhes abaixo). |
 
 ## Como o código está agora (segunda simplificação, 17/11 à tarde)
 
@@ -144,7 +146,7 @@ subtotal R$ 749,50, frete R$ 20,70, desconto R$ 37,48, **total R$ 732,72**; esto
 - **Código comentado:** todos os arquivos `.cs` escritos à mão (Model, Controller, Data e as telas) têm agora um
   comentário em quase toda linha ou método, em linguagem simples (o que a linha faz e por quê), incluindo
   explicações de C# (`abstract`, `override`, `protected`, `?`, `using`, `Include`, `?:`, `as`...). São 613 linhas com
-  comentário. Ficaram de fora os `*.Designer.cs` (o Visual Studio regera) e as Migrations (geradas pelo EF).
+  comentário. Ficaram de fora os `*.Designer.cs` (o Visual Studio regera; em 18/11 eles saíram com a conversão para WPF) e as Migrations (geradas pelo EF).
 - **Garantia de que o código não mudou:** um script remove os comentários das versões antes e depois e compara;
   o resultado foi idêntico. A compilação continua com 0 avisos e 0 erros.
 - **`Estudo/Perguntas_e_Respostas.md` / `.pdf`** (14 páginas, fora do Git): 102 perguntas em 17 blocos — projeto,
@@ -168,10 +170,65 @@ Sem erros estruturais: classes, atributos, multiplicidades e tabelas batem com o
 7. **Excalidraw:** as telas de Cadastro e Perfil e o "Produto em Promoção" estão desenhados mas fora do escopo —
    marcar como "fora do escopo" ou explicar no vídeo.
 
+## Migração para o .NET 10 (18/11)
+
+Pedido: "reescreva o código em .NET 10, mantendo a integridade do projeto".
+
+- **Projetos:** `net8.0` → `net10.0` (Model, Controller, Data) e `net8.0-windows` → `net10.0-windows` (View).
+- **Provedor do MySQL:** o Pomelo não tem versão para o EF Core 10 (a última é a 9.0.0). Por escolha do Miguel, foi
+  trocado pelo provedor oficial da Oracle, **`MySql.EntityFrameworkCore` 10.0.12**, com EF Core **10.0.12**.
+  - `LojaDbContext.OnConfiguring`: `UseMySql(conexão, new MySqlServerVersion(...))` → `UseMySQL(conexão)`.
+  - `MeusPedidosDAO`: `using MySqlConnector;` → `using MySql.Data.MySqlClient;` (mesmas classes `MySqlConnection`,
+    `MySqlCommand` e `MySqlDataReader`; o SQL não mudou).
+  - **Migration gerada de novo:** a antiga (`20261112131405_CriacaoInicial`) tinha código próprio do Pomelo e não
+    compilava. A nova é `20261118110714_CriacaoInicial`, com o mesmo nome e as mesmas 9 tabelas, colunas, chaves e
+    seed. **Quem já tinha criado o banco com a migration antiga deve rodar `Drop-Database` e depois `Update-Database`.**
+- **Pacote novo `Microsoft.EntityFrameworkCore.Tools`:** os comandos `Add-Migration`/`Update-Database`/`Drop-Database` do
+  Console do Gerenciador de Pacotes dependem dele, e ele **faltava desde o início** (sem ele, o `Update-Database`
+  das instruções não funcionaria no Visual Studio).
+- **Avisos novos:** o .NET 10 marcou `DataGridViewCell.Value` e `Columns["..."]` como possivelmente nulos (9 avisos).
+  Corrigidos em `FrmInicial`, `FrmFavoritos` e `FrmCarrinho` com `Convert.ToInt32(...)` no lugar de `(int)...` e
+  `Columns["Id"]!` (comentado). Compilação: **0 avisos, 0 erros**.
+- **Teste:** a migration foi aplicada num MySQL 8.0 (podman), seguida de um teste de ponta a ponta com 16 verificações:
+  login PF/PJ/errado, catálogo, busca, favoritos, estoque insuficiente, subtotal R$ 749,50, frete R$ 20,70,
+  desconto R$ 37,48, pedido gravado, estoque 40 → 35, Meus Pedidos em SQL puro com total **R$ 732,72**, e pedido PJ
+  com Pix. Todas passaram. `has-pending-model-changes`: sem mudanças.
+- **Documentos atualizados:** README, README da solution (requisitos), diagrama de arquitetura (HTML e PNG), plano
+  (Tabela 1 da stack, Seção 5.3, nova linha na Tabela 7 de registro de IA, Figura 2, PDF com o Sumário atualizado;
+  o plano passou de 21 para 22 páginas) e `Estudo/` (requisitos do PC, `OnConfiguring` e a nova pergunta 40b).
+- **Visual Studio:** o .NET 10 precisa do **Visual Studio 2026** (versão 18); o VS 2022 não tem suporte a ele.
+
+## Conversão para WPF (18/11)
+
+Pedido: "é um projeto WPF com .NET 10, faça as alterações necessárias para que ele seja compatível". Só a camada
+**View** mudou; Model, Controller e Data ficaram iguais.
+
+- **Projeto:** `LojaVirtual.View.csproj` com `<UseWPF>true</UseWPF>` no lugar de `UseWindowsForms`.
+- **Ponto de entrada:** saiu o `Program.cs`; entrou o **`App.xaml` / `App.xaml.cs`**. O `App_Startup` abre o login
+  (`ShowDialog`); se entrar, cria a `SessaoDoUsuario` e abre a `FrmInicial` como `MainWindow`. O `ShutdownMode` começa
+  em `OnExplicitShutdown` (fechar o login não encerra o programa antes da hora) e passa a `OnMainWindowClose`.
+- **Telas:** os 6 `*.Designer.cs` saíram; cada tela agora tem **`.xaml` (layout) + `.xaml.cs` (eventos)**, com os
+  **mesmos nomes** (`FrmLogin`, `FrmInicial`, `FrmFavoritos`, `FrmCarrinho`, `FrmCheckout`, `FrmMeusPedidos`), os
+  mesmos textos, botões, fluxo e mensagens. Layout com `Grid`/`DockPanel`/`StackPanel` (redimensiona sozinho).
+- **Trocas de controles:** `DataGridView` → `DataGrid` (`ItemsSource`, colunas automáticas); `NumericUpDown` (não
+  existe no WPF) → `TextBox` + `int.TryParse` na quantidade do carrinho e `ComboBox` 1..10 nas parcelas; senha com
+  `PasswordBox`; `Panel` → `DockPanel`/`StackPanel`/`TextBox` com `Visibility`; `Load` → `Loaded`; `.Text` de botão
+  → `.Content`; `Enabled` → `IsEnabled`; `Checked` → `IsChecked == true`; `DialogResult.OK` → `DialogResult = true`;
+  `PlaceholderText` → rótulo (`TextBlock`) acima do campo.
+- **Linha selecionada:** antes a grade tinha uma coluna `Id` escondida. Agora a tela guarda a lista original
+  (`_produtos`, `_favoritosDaTela`, `Carrinho.Itens`) e usa `SelectedIndex` para achar o item. A ordenação por clique
+  na coluna foi desligada (`CanUserSortColumns="False"`) para a posição continuar valendo.
+- **Compilação:** 0 avisos, 0 erros (XAML compilado). **As telas ainda não foram abertas**: WPF só roda no Windows.
+- **Documentos:** READMEs, diagrama de arquitetura (HTML/PNG e Figura 2 do plano), plano (Sumário Executivo, Tabela 1,
+  3.2, 4.1, 4.2, 8.1, Tabela 10, capa e nova linha na Tabela 7; PDF regerado, 23 páginas) e `Estudo/` (perguntas
+  31, 79, 79b, 80, 82, 83 e o mapa de arquivos).
+
 ## Pendências (para 18/11)
 
-- [ ] Abrir cada tela no Visual Studio (Windows) e conferir o layout.
-- [ ] Criar o banco: `Update-Database -Project LojaVirtual.Data -StartupProject LojaVirtual.Data` no Package Manager Console.
+- [ ] Abrir cada tela WPF no Visual Studio (Windows) e conferir o layout e o fluxo completo.
+- [ ] Instalar o Visual Studio 2026 com o .NET 10 (se ainda for o VS 2022).
+- [ ] Criar o banco: `Update-Database -Project LojaVirtual.Data -StartupProject LojaVirtual.Data` no Package Manager Console
+  (se já existir um `loja_pecas` criado pela migration antiga, rode `Drop-Database` antes).
 - [ ] Revisar o código e reescrever (ou assumir no vídeo) a versão A do comparativo.
 - [x] Ajustar o plano para trabalho individual.
 - [ ] Preencher o nome completo na capa do plano (Word) e exportar o PDF de novo (atualizar o Sumário antes).
@@ -189,6 +246,7 @@ Sem erros estruturais: classes, atributos, multiplicidades e tabelas batem com o
   (ambos com `-Project LojaVirtual.Data -StartupProject LojaVirtual.Data`).
 - Para trocar a regra de desconto (demonstrar o OCP): em `FrmCheckout`, troque `new DescontoQuantidade()` por
   `new SemDesconto()` ou por uma nova classe que implemente `IDescontoStrategy`.
+- Provedor do MySQL: `MySql.EntityFrameworkCore` (Oracle). Ao trocar de provedor, a migration precisa ser gerada de novo.
 - O projeto `LojaVirtual.Data` está com `<Nullable>disable</Nullable>` (evita avisos nos `DbSet`); o Model continua
   com `enable`, e isso não pode mudar sem gerar migration nova (o EF usa a nulidade para decidir NOT NULL).
 - Ao editar o `.docx` do plano no Linux, gere o PDF de forma que o Sumário seja atualizado; não deixe o

@@ -1,26 +1,27 @@
+using System.Windows;                 // classes do WPF (Window, MessageBox...)
 using LojaVirtual.Controller;         // para usar ContaController
 using LojaVirtual.Model.Entidades;    // para usar Pessoa
 
 namespace LojaVirtual.View;
 
 // Tela de login. Clientes de teste: ana@teste.com (PF) e empresa@teste.com (PJ), senha 123456.
-// "partial": a outra parte da classe está no FrmLogin.Designer.cs (os controles desenhados).
-public partial class FrmLogin : Form
+// "partial": a outra parte da classe vem do FrmLogin.xaml (os controles desenhados).
+public partial class FrmLogin : Window
 {
     private ContaController _conta = new ContaController();   // controlador desta tela
 
-    // Cliente que entrou. O Program lê esta propriedade depois que a tela fecha.
+    // Cliente que entrou. O App lê esta propriedade depois que a tela fecha.
     public Pessoa? ClienteLogado { get; private set; }
 
     public FrmLogin()
     {
-        InitializeComponent();   // cria os botões e caixas de texto desenhados no Designer
+        InitializeComponent();   // cria os controles desenhados no XAML
     }
 
     // Clique no botão "Entrar".
-    private void BtnEntrar_Click(object sender, EventArgs e)
+    private void BtnEntrar_Click(object sender, RoutedEventArgs e)
     {
-        ClienteLogado = _conta.Entrar(txtEmail.Text, txtSenha.Text);   // pede para o controlador conferir
+        ClienteLogado = _conta.Entrar(txtEmail.Text, txtSenha.Password);   // pede para o controlador conferir
 
         if (ClienteLogado == null)   // e-mail ou senha errados
         {
@@ -28,6 +29,6 @@ public partial class FrmLogin : Form
             return;                                          // continua na tela de login
         }
 
-        DialogResult = DialogResult.OK;   // fecha o login
+        DialogResult = true;   // fecha o login avisando que deu certo
     }
 }

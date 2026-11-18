@@ -1,5 +1,5 @@
 using LojaVirtual.Model;   // para usar ResumoPedido
-using MySqlConnector;      // biblioteca ADO.NET do MySQL (MySqlConnection, MySqlCommand...)
+using MySql.Data.MySqlClient;   // biblioteca ADO.NET do MySQL, da Oracle (MySqlConnection, MySqlCommand...)
 
 namespace LojaVirtual.Data.Consultas;
 

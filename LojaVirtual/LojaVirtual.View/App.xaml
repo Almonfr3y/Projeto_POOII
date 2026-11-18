@@ -1,0 +1,19 @@
+<!-- Aplicação WPF: é por aqui que o programa começa (o WPF cria o Main sozinho a partir deste arquivo). -->
+<!-- Startup: método do App.xaml.cs que roda ao abrir o programa (mostra o login e depois a Tela Inicial). -->
+<!-- ShutdownMode OnExplicitShutdown: o programa só fecha quando o código mandar (o login fechar não encerra tudo). -->
+<Application x:Class="LojaVirtual.View.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Startup="App_Startup"
+             ShutdownMode="OnExplicitShutdown">
+    <Application.Resources>
+        <!-- Estilos usados em todas as telas: fonte e espaçamento padrão. -->
+        <Style TargetType="Button">
+            <Setter Property="Padding" Value="10,4" />
+            <Setter Property="Margin" Value="6,0,0,0" />
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="Padding" Value="3" />
+        </Style>
+    </Application.Resources>
+</Application>

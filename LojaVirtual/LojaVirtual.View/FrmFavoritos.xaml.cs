@@ -1,3 +1,4 @@
+using System.Windows;                 // classes do WPF (Window, MessageBox...)
 using LojaVirtual.Controller;         // para usar os controladores
 using LojaVirtual.Model.Entidades;    // para usar Produto
 using LojaVirtual.Model.Excecoes;     // para usar EstoqueInsuficienteException
@@ -5,11 +6,12 @@ using LojaVirtual.Model.Excecoes;     // para usar EstoqueInsuficienteException
 namespace LojaVirtual.View;
 
 // Tela Favoritos: pesquisar, desfavoritar e mandar para o carrinho.
-public partial class FrmFavoritos : Form
+public partial class FrmFavoritos : Window
 {
     private SessaoDoUsuario _sessao;                                     // cliente logado e carrinho
     private FavoritosController _favoritos = new FavoritosController();  // listar/desfavoritar
     private CatalogoController _catalogo = new CatalogoController();     // buscar o produto para o carrinho
+    private List<Produto> _favoritosDaTela = new List<Produto>();        // produtos na mesma ordem da grade
 
     public FrmFavoritos(SessaoDoUsuario sessao)
     {
@@ -18,35 +20,35 @@ public partial class FrmFavoritos : Form
     }
 
     // Executa quando a tela abre.
-    private void FrmFavoritos_Load(object sender, EventArgs e)
+    private void FrmFavoritos_Loaded(object sender, RoutedEventArgs e)
     {
         AtualizarLista();
     }
 
     // Clique em "Buscar".
-    private void BtnBuscar_Click(object sender, EventArgs e)
+    private void BtnBuscar_Click(object sender, RoutedEventArgs e)
     {
         AtualizarLista();
     }
 
     // Clique em "Desfavoritar".
-    private void BtnDesfavoritar_Click(object sender, EventArgs e)
+    private void BtnDesfavoritar_Click(object sender, RoutedEventArgs e)
     {
-        if (dgvFavoritos.CurrentRow == null)   // nenhuma linha selecionada
+        if (dgFavoritos.SelectedIndex < 0)   // -1 = nenhuma linha selecionada
             return;
 
-        int produtoId = (int)dgvFavoritos.CurrentRow.Cells["Id"].Value;   // Id escondido da linha
+        int produtoId = _favoritosDaTela[dgFavoritos.SelectedIndex].Id;   // a linha está na mesma posição da lista
         _favoritos.Desfavoritar(_sessao.Cliente.Id, produtoId);           // apaga de tb_favorito
         AtualizarLista();                                                 // o produto some da lista
     }
 
     // Clique em "Adicionar ao carrinho".
-    private void BtnAdicionar_Click(object sender, EventArgs e)
+    private void BtnAdicionar_Click(object sender, RoutedEventArgs e)
     {
-        if (dgvFavoritos.CurrentRow == null)
+        if (dgFavoritos.SelectedIndex < 0)
             return;
 
-        int produtoId = (int)dgvFavoritos.CurrentRow.Cells["Id"].Value;
+        int produtoId = _favoritosDaTela[dgFavoritos.SelectedIndex].Id;
         Produto? produto = _catalogo.BuscarProduto(produtoId);   // estoque atual do banco
         if (produto == null)
             return;
@@ -65,17 +67,15 @@ public partial class FrmFavoritos : Form
     // Carrega os favoritos (com o filtro da busca) na grade.
     private void AtualizarLista()
     {
-        List<Produto> favoritos = _favoritos.Listar(_sessao.Cliente.Id, txtBusca.Text);
+        _favoritosDaTela = _favoritos.Listar(_sessao.Cliente.Id, txtBusca.Text);
 
         // Objeto anônimo: só as colunas que interessam. O nome do campo vira o título da coluna.
-        dgvFavoritos.DataSource = favoritos.Select(p => new
+        dgFavoritos.ItemsSource = _favoritosDaTela.Select(p => new
         {
-            p.Id,
             Peça = p.Nome,
             Especificações = p.Especificacoes,
             Preço = p.Preco.ToString("C"),
             p.Estoque
         }).ToList();
-        dgvFavoritos.Columns["Id"].Visible = false;   // esconde o Id
     }
 }

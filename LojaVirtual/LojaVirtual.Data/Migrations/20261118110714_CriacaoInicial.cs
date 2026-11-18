@@ -1,6 +1,6 @@
 ﻿using System;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
+using MySql.EntityFrameworkCore.Metadata;
 
 #nullable disable
 
@@ -15,31 +15,29 @@ namespace LojaVirtual.Data.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterDatabase()
-                .Annotation("MySql:CharSet", "utf8mb4");
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "tb_categoria",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
                     Nome = table.Column<string>(type: "varchar(80)", maxLength: 80, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_tb_categoria", x => x.Id);
                 })
-                .Annotation("MySql:CharSet", "utf8mb4");
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "tb_opcao_entrega",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    Nome = table.Column<string>(type: "varchar(60)", maxLength: 60, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    Nome = table.Column<string>(type: "varchar(60)", maxLength: 60, nullable: false),
                     PrazoDias = table.Column<int>(type: "int", nullable: false),
                     ValorBase = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false),
                     ValorPorKg = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false)
@@ -48,45 +46,36 @@ namespace LojaVirtual.Data.Migrations
                 {
                     table.PrimaryKey("PK_tb_opcao_entrega", x => x.Id);
                 })
-                .Annotation("MySql:CharSet", "utf8mb4");
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "tb_pessoa",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    Nome = table.Column<string>(type: "varchar(150)", maxLength: 150, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Email = table.Column<string>(type: "varchar(150)", maxLength: 150, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Senha = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    TipoPessoa = table.Column<string>(type: "varchar(8)", maxLength: 8, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Cpf = table.Column<string>(type: "varchar(14)", maxLength: 14, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Cnpj = table.Column<string>(type: "varchar(18)", maxLength: 18, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    Nome = table.Column<string>(type: "varchar(150)", maxLength: 150, nullable: false),
+                    Email = table.Column<string>(type: "varchar(150)", maxLength: 150, nullable: false),
+                    Senha = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false),
+                    TipoPessoa = table.Column<string>(type: "varchar(8)", maxLength: 8, nullable: false),
+                    Cpf = table.Column<string>(type: "varchar(14)", maxLength: 14, nullable: true),
+                    Cnpj = table.Column<string>(type: "varchar(18)", maxLength: 18, nullable: true),
                     RazaoSocial = table.Column<string>(type: "varchar(150)", maxLength: 150, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_tb_pessoa", x => x.Id);
                 })
-                .Annotation("MySql:CharSet", "utf8mb4");
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "tb_produto",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    Nome = table.Column<string>(type: "varchar(150)", maxLength: 150, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Especificacoes = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    Nome = table.Column<string>(type: "varchar(150)", maxLength: 150, nullable: false),
+                    Especificacoes = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: false),
                     Preco = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false),
                     PesoKg = table.Column<decimal>(type: "decimal(8,3)", precision: 8, scale: 3, nullable: false),
                     Estoque = table.Column<int>(type: "int", nullable: false),
@@ -102,28 +91,21 @@ namespace LojaVirtual.Data.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 })
-                .Annotation("MySql:CharSet", "utf8mb4");
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "tb_endereco",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    Apelido = table.Column<string>(type: "varchar(40)", maxLength: 40, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Logradouro = table.Column<string>(type: "varchar(150)", maxLength: 150, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Numero = table.Column<string>(type: "varchar(10)", maxLength: 10, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Bairro = table.Column<string>(type: "varchar(80)", maxLength: 80, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Cidade = table.Column<string>(type: "varchar(80)", maxLength: 80, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Uf = table.Column<string>(type: "varchar(2)", maxLength: 2, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Cep = table.Column<string>(type: "varchar(9)", maxLength: 9, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    Apelido = table.Column<string>(type: "varchar(40)", maxLength: 40, nullable: false),
+                    Logradouro = table.Column<string>(type: "varchar(150)", maxLength: 150, nullable: false),
+                    Numero = table.Column<string>(type: "varchar(10)", maxLength: 10, nullable: false),
+                    Bairro = table.Column<string>(type: "varchar(80)", maxLength: 80, nullable: false),
+                    Cidade = table.Column<string>(type: "varchar(80)", maxLength: 80, nullable: false),
+                    Uf = table.Column<string>(type: "varchar(2)", maxLength: 2, nullable: false),
+                    Cep = table.Column<string>(type: "varchar(9)", maxLength: 9, nullable: false),
                     ClienteId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -136,7 +118,7 @@ namespace LojaVirtual.Data.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 })
-                .Annotation("MySql:CharSet", "utf8mb4");
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "tb_favorito",
@@ -161,17 +143,16 @@ namespace LojaVirtual.Data.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 })
-                .Annotation("MySql:CharSet", "utf8mb4");
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "tb_pedido",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
                     Data = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    Status = table.Column<string>(type: "varchar(15)", maxLength: 15, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Status = table.Column<string>(type: "varchar(15)", maxLength: 15, nullable: false),
                     ValorFrete = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false),
                     ValorDesconto = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false),
                     ClienteId = table.Column<int>(type: "int", nullable: false),
@@ -200,29 +181,24 @@ namespace LojaVirtual.Data.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 })
-                .Annotation("MySql:CharSet", "utf8mb4");
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "tb_pagamento",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
                     Valor = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false),
                     DataProcessamento = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     PedidoId = table.Column<int>(type: "int", nullable: false),
-                    Forma = table.Column<string>(type: "varchar(13)", maxLength: 13, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CodigoDeBarras = table.Column<string>(type: "varchar(60)", maxLength: 60, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Forma = table.Column<string>(type: "varchar(13)", maxLength: 13, nullable: false),
+                    CodigoDeBarras = table.Column<string>(type: "varchar(60)", maxLength: 60, nullable: true),
                     Vencimento = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    NomeTitular = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    UltimosDigitos = table.Column<string>(type: "varchar(4)", maxLength: 4, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    NomeTitular = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: true),
+                    UltimosDigitos = table.Column<string>(type: "varchar(4)", maxLength: 4, nullable: true),
                     Parcelas = table.Column<int>(type: "int", nullable: true),
                     CodigoPix = table.Column<string>(type: "varchar(40)", maxLength: 40, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
@@ -234,7 +210,7 @@ namespace LojaVirtual.Data.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 })
-                .Annotation("MySql:CharSet", "utf8mb4");
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "tb_pedido_item",
@@ -261,7 +237,7 @@ namespace LojaVirtual.Data.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 })
-                .Annotation("MySql:CharSet", "utf8mb4");
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.InsertData(
                 table: "tb_categoria",

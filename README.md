@@ -3,7 +3,7 @@
 Atividade avaliativa da disciplina de Programação Orientada a Objetos II (Stack EW) — Engenharia da Computação, UVV.
 Entrega e apresentação: **18/11/2026**.
 
-Sistema em **C# (.NET 8) com Windows Forms**, organizado em camadas **MVC**, com persistência em **MySQL**
+Sistema em **C# (.NET 10) com WPF**, organizado em camadas **MVC**, com persistência em **MySQL**
 via **Entity Framework Core (Code First)** e uma funcionalidade em **SQL puro (ADO.NET)**.
 
 O escopo segue **o ponto de vista do cliente (pessoa física ou jurídica) fazendo uma compra**:
