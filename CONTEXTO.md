@@ -223,6 +223,43 @@ Pedido: "é um projeto WPF com .NET 10, faça as alterações necessárias para 
   3.2, 4.1, 4.2, 8.1, Tabela 10, capa e nova linha na Tabela 7; PDF regerado, 23 páginas) e `Estudo/` (perguntas
   31, 79, 79b, 80, 82, 83 e o mapa de arquivos).
 
+## Como abrir e rodar no Windows (passo a passo)
+
+**1. Programas (só na primeira vez)**
+- **Visual Studio 2026** (Community é gratuito); o VS 2022 não abre projetos .NET 10. No instalador, marque a carga
+  **"Desenvolvimento para desktop com .NET"** (instala o .NET 10 e o WPF).
+- **MySQL Server 8**, usuário `root` **sem senha**, porta 3306. Se o root tiver senha, troque `password=;` por
+  `password=SUA_SENHA;` em `LojaVirtual.Data/LojaDbContext.cs`.
+
+**2. Abrir**
+1. Se baixou o ZIP do GitHub, **extraia primeiro** (botão direito → Extrair tudo); não abra de dentro do ZIP.
+2. Abra a pasta `Projeto_POOII\LojaVirtual` e dê dois cliques em **`LojaVirtual.sln`** (ou, no Visual Studio:
+   Arquivo → Abrir → Projeto/Solução).
+3. Espere o Visual Studio restaurar os pacotes NuGet (barra de baixo).
+
+**3. Preparar**
+1. No **Gerenciador de Soluções**, botão direito em **`LojaVirtual.View`** → **Definir como Projeto de Inicialização**.
+2. **Ferramentas → Gerenciador de Pacotes do NuGet → Console do Gerenciador de Pacotes**:
+   ```
+   Update-Database -Project LojaVirtual.Data -StartupProject LojaVirtual.Data
+   ```
+   Isso cria o banco `loja_pecas` com as tabelas e os produtos. Se já existir um `loja_pecas` antigo, rode antes:
+   ```
+   Drop-Database -Project LojaVirtual.Data -StartupProject LojaVirtual.Data
+   ```
+
+**4. Rodar**
+- **F5**. Login: **ana@teste.com** (pessoa física) ou **empresa@teste.com** (pessoa jurídica), senha **123456**.
+
+**Se der erro**
+
+| Problema | Solução |
+|---|---|
+| "SDK do .NET 10 não encontrado" ou projeto "não carregado" | Está no VS 2022: instale o VS 2026. |
+| `Update-Database` não é reconhecido | Feche e abra o Visual Studio, ou Compilar → Recompilar Solução e tente de novo. |
+| Erro de conexão / "Access denied" no MySQL | Confira se o MySQL está ligado e a senha do root em `LojaDbContext.cs`. |
+| Tela com layout estranho | Abra o `.xaml` daquela tela no Visual Studio e ajuste. |
+
 ## Pendências (para 18/11)
 
 - [ ] Abrir cada tela WPF no Visual Studio (Windows) e conferir o layout e o fluxo completo.
